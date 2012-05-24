@@ -29,4 +29,8 @@ Support input types: text, textarea, checkbox, radio box, select, wysiwyg, file 
 
 == Changelog ==
 
+= 1.1.2 =
+
+- Fix image uploader
+
 == Upgrade Notice ==
