@@ -314,9 +314,9 @@ class RW_Taxonomy_Meta {
 	function add_script_wysiwyg() {
 		require_once ABSPATH . '/wp-admin/includes/post.php';
 
-		wp_tiny_mce(false, array(
-			'editor_selector' => 'theEditor'
-		));
+		wp_tiny_mce(false, array('editor_selector' => 'theEditor'));
+		// wp_editor( '', 'theeditor', $settings = array() );
+		
 	}
 
 	/******************** END WYSIWYG **********************/
@@ -411,7 +411,8 @@ class RW_Taxonomy_Meta {
 
 	function show_field_wysiwyg($field, $meta) {
 		$this->show_field_begin($field, $meta);
-		echo "<textarea name='{$field['id']}' id='{$field['id']}' class='{$field['id']} theEditor' cols='60' rows='15' style='{$field['style']}'>$meta</textarea>";
+		//echo "<textarea name='{$field['id']}' id='{$field['id']}' class='{$field['id']} theEditor' cols='60' rows='15' style='{$field['style']}'>$meta</textarea>";
+		wp_editor( $meta, $field["id"], array('textarea_name'=>$field["id"],'editor_class'=> $field["id"].' theEditor') );
 		$this->show_field_end($field, $meta);
 	}
 
