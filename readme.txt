@@ -3,7 +3,7 @@ Contributors: rilwis
 Donate link: http://www.deluxeblogtips.com/donate
 Tags: custom-fields, custom-field, meta, taxonomy, term
 Requires at least: 3.0
-Tested up to: 3.3.2
+Tested up to: 3.4.2
 Stable tag: trunk
 
 Taxonomy Meta plugin helps you easily add meta values to terms, mimic custom post fields
@@ -28,6 +28,10 @@ Support input types: text, textarea, checkbox, radio box, select, wysiwyg, file 
 == Screenshots ==
 
 == Changelog ==
+
+= 1.1.3 =
+
+- Updated enqueuing of styles and scripts
 
 = 1.1.2 =
 
