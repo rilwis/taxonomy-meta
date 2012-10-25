@@ -4,7 +4,7 @@
 Plugin Name: Taxonomy Meta
 Plugin URI: http://www.deluxeblogtips.com/taxonomy-meta-script-for-wordpress
 Description: Add meta values to terms, mimic custom post fields
-Version: 1.1.2
+Version: 1.1.3
 Author: Rilwis
 Author URI: http://www.deluxeblogtips.com
 License: GPL2+
@@ -27,11 +27,11 @@ class RW_Taxonomy_Meta {
 		add_action('admin_init', array(&$this, 'add'));
 		add_action('edit_term', array(&$this, 'save'), 10, 2);
 		add_action('delete_term', array(&$this, 'delete'), 10, 2);
+		add_action('admin_enqueue_scripts', array(&$this, 'check_field_date'));
+		add_action('admin_enqueue_scripts', array(&$this, 'check_field_color'));
+		add_action('admin_enqueue_scripts', array(&$this, 'check_field_time'));
 
 		$this->check_field_upload();
-		$this->check_field_color();
-		$this->check_field_date();
-		$this->check_field_time();
 		$this->check_field_wysiwyg();
 	}
 
@@ -307,14 +307,15 @@ class RW_Taxonomy_Meta {
 		if (!$this->has_field('wysiwyg')) return;
 
 		wp_enqueue_scripts('jquery');
-		add_action('admin_head-edit-tags.php', array(&$this, 'add_script_wysiwyg'));
+        //add_action('admin_head-edit-tags.php', array(&$this, 'add_script_wysiwyg'));
+        // We don't need to use this anymore because of wp_editor
 	}
 
 	// Custom script and style for time picker
 	function add_script_wysiwyg() {
-		require_once ABSPATH . '/wp-admin/includes/post.php';
+        require_once ABSPATH . '/wp-admin/includes/post.php';
 
-		wp_tiny_mce(false, array('editor_selector' => 'theEditor'));
+        wp_tiny_mce(false, array('editor_selector' => 'theEditor'));
 		// wp_editor( '', 'theeditor', $settings = array() );
 		
 	}
@@ -325,9 +326,10 @@ class RW_Taxonomy_Meta {
 
 	// Add meta fields for taxonomies
 	function add() {
-		foreach (get_taxonomies(array('show_ui' => true)) as $tax_name) {
+		//foreach (get_taxonomies(array('show_ui' => true)) as $tax_name) {
+		foreach (get_taxonomies() as $tax_name) {
 			if (in_array($tax_name, $this->_taxonomies)) {
-				add_action($tax_name . '_edit_form', array(&$this, 'show'), 10, 2);
+				add_action($tax_name . '_edit_form', array(&$this, 'show'), 9, 2);
 			}
 		}
 	}
