@@ -27,11 +27,11 @@ class RW_Taxonomy_Meta {
 		add_action('admin_init', array(&$this, 'add'));
 		add_action('edit_term', array(&$this, 'save'), 10, 2);
 		add_action('delete_term', array(&$this, 'delete'), 10, 2);
+		add_action('admin_enqueue_scripts', array(&$this, 'check_field_date'));
+		add_action('admin_enqueue_scripts', array(&$this, 'check_field_color'));
+		add_action('admin_enqueue_scripts', array(&$this, 'check_field_time'));
 
 		$this->check_field_upload();
-		$this->check_field_color();
-		$this->check_field_date();
-		$this->check_field_time();
 		$this->check_field_wysiwyg();
 	}
 
@@ -307,14 +307,15 @@ class RW_Taxonomy_Meta {
 		if (!$this->has_field('wysiwyg')) return;
 
 		wp_enqueue_scripts('jquery');
-		add_action('admin_head-edit-tags.php', array(&$this, 'add_script_wysiwyg'));
+        //add_action('admin_head-edit-tags.php', array(&$this, 'add_script_wysiwyg'));
+        // We don't need to use this anymore because of wp_editor
 	}
 
 	// Custom script and style for time picker
 	function add_script_wysiwyg() {
-		require_once ABSPATH . '/wp-admin/includes/post.php';
+        require_once ABSPATH . '/wp-admin/includes/post.php';
 
-		wp_tiny_mce(false, array('editor_selector' => 'theEditor'));
+        wp_tiny_mce(false, array('editor_selector' => 'theEditor'));
 		// wp_editor( '', 'theeditor', $settings = array() );
 		
 	}
