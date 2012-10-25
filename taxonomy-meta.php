@@ -329,7 +329,7 @@ class RW_Taxonomy_Meta {
 		//foreach (get_taxonomies(array('show_ui' => true)) as $tax_name) {
 		foreach (get_taxonomies() as $tax_name) {
 			if (in_array($tax_name, $this->_taxonomies)) {
-				add_action($tax_name . '_edit_form', array(&$this, 'show'), 10, 2);
+				add_action($tax_name . '_edit_form', array(&$this, 'show'), 9, 2);
 			}
 		}
 	}
