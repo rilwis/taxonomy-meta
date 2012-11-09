@@ -46,11 +46,11 @@ class RW_Taxonomy_Meta {
 			add_action('wp_ajax_rw_delete_file', array(&$this, 'delete_file'));			// ajax delete files
 		}
 	}
-	
+
 	function enqueue_scripts() {
 		wp_enqueue_script('media-upload');
 		wp_enqueue_script('thickbox');
-		wp_enqueue_style('thickbox');		
+		wp_enqueue_style('thickbox');
 	}
 
 	// Add scripts for handling add/delete images
@@ -528,9 +528,9 @@ class RW_Taxonomy_Meta {
 			// call defined method to save meta value, if there's no methods, call common one
 			$save_func = 'save_field_' . $type;
 			if (method_exists($this, $save_func)) {
-				call_user_func(array(&$this, 'save_field_' . $type), &$meta, $field, $old, $new);
+				call_user_func(array(&$this, 'save_field_' . $type), $meta, $field, $old, $new);
 			} else {
-				$this->save_field(&$meta, $field, $old, $new);
+				$this->save_field($meta, $field, $old, $new);
 			}
 		}
 
