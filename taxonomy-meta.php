@@ -19,17 +19,17 @@ class RW_Taxonomy_Meta {
 		if (!is_admin()) return;
 
 		$this->_meta = $meta;
-		$this->_taxonomies = & $this->_meta['taxonomies'];
-		$this->_fields = & $this->_meta['fields'];
+		$this->_taxonomies = $this->_meta['taxonomies'];
+		$this->_fields = $this->_meta['fields'];
 
 		$this->add_missed_values();
 
-		add_action('admin_init', array(&$this, 'add'));
-		add_action('edit_term', array(&$this, 'save'), 10, 2);
-		add_action('delete_term', array(&$this, 'delete'), 10, 2);
-		add_action('admin_enqueue_scripts', array(&$this, 'check_field_date'));
-		add_action('admin_enqueue_scripts', array(&$this, 'check_field_color'));
-		add_action('admin_enqueue_scripts', array(&$this, 'check_field_time'));
+		add_action('admin_init', array($this, 'add'));
+		add_action('edit_term', array($this, 'save'), 10, 2);
+		add_action('delete_term', array($this, 'delete'), 10, 2);
+		add_action('admin_enqueue_scripts', array($this, 'check_field_date'));
+		add_action('admin_enqueue_scripts', array($this, 'check_field_color'));
+		add_action('admin_enqueue_scripts', array($this, 'check_field_time'));
 
 		$this->check_field_upload();
 		$this->check_field_wysiwyg();
@@ -40,10 +40,10 @@ class RW_Taxonomy_Meta {
 	// Check field upload and add needed actions
 	function check_field_upload() {
 		if ($this->has_field('image') || $this->has_field('file')) {
-			add_action( 'admin_enqueue_scripts', array(&$this, 'enqueue_scripts'));
+			add_action( 'admin_enqueue_scripts', array($this, 'enqueue_scripts'));
 
-			add_action('admin_head-edit-tags.php', array(&$this, 'add_script_upload'));	// add scripts for handling add/delete images
-			add_action('wp_ajax_rw_delete_file', array(&$this, 'delete_file'));			// ajax delete files
+			add_action('admin_head-edit-tags.php', array($this, 'add_script_upload'));	// add scripts for handling add/delete images
+			add_action('wp_ajax_rw_delete_file', array($this, 'delete_file'));			// ajax delete files
 		}
 	}
 
@@ -174,7 +174,7 @@ class RW_Taxonomy_Meta {
 		if ($this->has_field('color')) {
 			wp_enqueue_style('farbtastic');												// enqueue built-in script and style for color picker
 			wp_enqueue_script('farbtastic');
-			add_action('admin_head-edit-tags.php', array(&$this, 'add_script_color'));	// add our custom script for color picker
+			add_action('admin_head-edit-tags.php', array($this, 'add_script_color'));	// add our custom script for color picker
 		}
 	}
 
@@ -218,7 +218,7 @@ class RW_Taxonomy_Meta {
 			// add style and script, use proper jQuery UI version
 			wp_enqueue_style('rw-jquery-ui-css', 'http://ajax.googleapis.com/ajax/libs/jqueryui/' . $this->get_jqueryui_ver() . '/themes/base/jquery-ui.css');
 			wp_enqueue_script('rw-jquery-ui', 'https://ajax.googleapis.com/ajax/libs/jqueryui/' . $this->get_jqueryui_ver() . '/jquery-ui.min.js', array('jquery'));
-			add_action('admin_head-edit-tags.php', array(&$this, 'add_script_date'));
+			add_action('admin_head-edit-tags.php', array($this, 'add_script_date'));
 		}
 	}
 
@@ -260,7 +260,7 @@ class RW_Taxonomy_Meta {
 			wp_enqueue_style('rw-jquery-ui-css', 'http://ajax.googleapis.com/ajax/libs/jqueryui/' . $this->get_jqueryui_ver() . '/themes/base/jquery-ui.css');
 			wp_enqueue_script('rw-jquery-ui', 'https://ajax.googleapis.com/ajax/libs/jqueryui/' . $this->get_jqueryui_ver() . '/jquery-ui.min.js', array('jquery'));
 			wp_enqueue_script('rw-timepicker', 'https://github.com/trentrichardson/jQuery-Timepicker-Addon/raw/master/jquery-ui-timepicker-addon.js', array('rw-jquery-ui'));
-			add_action('admin_head-edit-tags.php', array(&$this, 'add_script_time'));
+			add_action('admin_head-edit-tags.php', array($this, 'add_script_time'));
 		}
 	}
 
@@ -329,7 +329,7 @@ class RW_Taxonomy_Meta {
 		//foreach (get_taxonomies(array('show_ui' => true)) as $tax_name) {
 		foreach (get_taxonomies() as $tax_name) {
 			if (in_array($tax_name, $this->_taxonomies)) {
-				add_action($tax_name . '_edit_form', array(&$this, 'show'), 9, 2);
+				add_action($tax_name . '_edit_form', array($this, 'show'), 9, 2);
 			}
 		}
 	}
@@ -355,7 +355,7 @@ class RW_Taxonomy_Meta {
 			$meta = !empty($metas[$field['id']]) ? $metas[$field['id']] : $field['std'];	// get meta value for current field
 			$meta = is_array($meta) ? array_map('esc_attr', $meta) : esc_attr($meta);
 
-			call_user_func(array(&$this, 'show_field_' . $field['type']), $field, $meta);
+			call_user_func(array($this, 'show_field_' . $field['type']), $field, $meta);
 
 			echo '</tr>';
 		}
@@ -531,7 +531,7 @@ class RW_Taxonomy_Meta {
 			// call defined method to save meta value, if there's no methods, call common one
 			$save_func = 'save_field_' . $type;
 			if (method_exists($this, $save_func)) {
-				call_user_func(array(&$this, 'save_field_' . $type), $meta, $field, $old, $new);
+				call_user_func(array($this, 'save_field_' . $type), $meta, $field, $old, $new);
 			} else {
 				$this->save_field($meta, $field, $old, $new);
 			}
@@ -557,7 +557,7 @@ class RW_Taxonomy_Meta {
 	function save_field_wysiwyg(&$meta, $field, $old, $new) {
 		$new = stripslashes($new);
 		$new = wpautop($new);
-		$this->save_field(&$meta, $field, $old, $new);
+		$this->save_field($meta, $field, $old, $new);
 	}
 
 	function save_field_file(&$meta, $field, $old, $new) {
