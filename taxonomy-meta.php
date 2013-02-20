@@ -392,7 +392,15 @@ class RW_Taxonomy_Meta {
 		$this->show_field_begin( $field, $meta );
 		echo "<select style='{$field['style']}' name='{$field['id']}" . ( $field['multiple'] ? "[]' multiple='multiple'" : "'" ) . ">";
 		foreach ( $field['options'] as $key => $value ) {
-			echo "<option value='$key'" . selected( in_array( $key, $meta ), true, false ) . ">$value</option>";
+			if ( $field['optgroups'] && is_array( $value ) ) {
+				echo "<optgroup label=\"{$value['label']}\">";
+				foreach ( $value['options'] as $option_key => $option_value ) {
+					echo "<option value='$option_key'" . selected( in_array( $option_key, $meta ), true, false ) . ">$option_value</option>";
+				}
+				echo '</optgroup>';
+			} else {
+				echo "<option value='$key'" . selected( in_array( $key, $meta ), true, false ) . ">$value</option>";
+			}
 		}
 		echo "</select>";
 		$this->show_field_end( $field, $meta );
@@ -546,7 +554,6 @@ class RW_Taxonomy_Meta {
 		$name = $field['id'];
 
 		$new = is_array( $new ) ? array_map( 'stripslashes', $new ) : stripslashes( $new );
-
 		if ( empty( $new ) ) {
 			unset( $meta[$name] );
 		} else {
@@ -612,10 +619,12 @@ class RW_Taxonomy_Meta {
 			$std = $multiple ? array() : '';
 			$format = 'date' == $field['type'] ? 'yy-mm-dd' : ( 'time' == $field['type'] ? 'hh:mm' : '' );
 			$style = 'width: 97%';
+			$optgroups = false;
 			if ( 'select' == $field['type'] ) $style = 'height: auto';
 
 			$field = array_merge( array(
 					'multiple' => $multiple,
+					'optgroups' => $optgroups,
 					'std' => $std,
 					'desc' => '',
 					'format' => $format,
