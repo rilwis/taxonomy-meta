@@ -4,7 +4,7 @@
 Plugin Name: Taxonomy Meta
 Plugin URI: http://www.deluxeblogtips.com/taxonomy-meta-script-for-wordpress
 Description: Add meta values to terms, mimic custom post fields
-Version: 1.1.5
+Version: 1.1.6
 Author: Rilwis
 Author URI: http://www.deluxeblogtips.com
 License: GPL2+
@@ -24,7 +24,7 @@ class RW_Taxonomy_Meta {
 
 		$this->add_missed_values();
 
-		add_action( 'admin_init', array( $this, 'add' ) );
+		add_action( 'admin_init', array( $this, 'add' ), 100 );
 		add_action( 'edit_term', array( $this, 'save' ), 10, 2 );
 		add_action( 'delete_term', array( $this, 'delete' ), 10, 2 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'check_field_date' ) );
@@ -32,7 +32,6 @@ class RW_Taxonomy_Meta {
 		add_action( 'admin_enqueue_scripts', array( $this, 'check_field_time' ) );
 
 		$this->check_field_upload();
-		$this->check_field_wysiwyg();
 	}
 
 	/******************** BEGIN UPLOAD **********************/
@@ -217,7 +216,7 @@ class RW_Taxonomy_Meta {
 
 			// add style and script, use proper jQuery UI version
 			wp_enqueue_style( 'rw-jquery-ui-css', 'http://ajax.googleapis.com/ajax/libs/jqueryui/' . $this->get_jqueryui_ver() . '/themes/base/jquery-ui.css' );
-			wp_enqueue_script( 'rw-jquery-ui', 'https://ajax.googleapis.com/ajax/libs/jqueryui/' . $this->get_jqueryui_ver() . '/jquery-ui.min.js', array( 'jquery' ) );
+			wp_enqueue_script( 'jquery-ui-datepicker' );
 			add_action( 'admin_head-edit-tags.php', array( $this, 'add_script_date' ) );
 		}
 	}
@@ -258,8 +257,7 @@ class RW_Taxonomy_Meta {
 
 			// add style and script, use proper jQuery UI version
 			wp_enqueue_style( 'rw-jquery-ui-css', 'http://ajax.googleapis.com/ajax/libs/jqueryui/' . $this->get_jqueryui_ver() . '/themes/base/jquery-ui.css' );
-			wp_enqueue_script( 'rw-jquery-ui', 'https://ajax.googleapis.com/ajax/libs/jqueryui/' . $this->get_jqueryui_ver() . '/jquery-ui.min.js', array( 'jquery' ) );
-			wp_enqueue_script( 'rw-timepicker', 'https://github.com/trentrichardson/jQuery-Timepicker-Addon/raw/master/jquery-ui-timepicker-addon.js', array( 'rw-jquery-ui' ) );
+			wp_enqueue_script( 'rw-timepicker', 'https://github.com/trentrichardson/jQuery-Timepicker-Addon/raw/master/jquery-ui-timepicker-addon.js', array( 'jquery-ui-datepicker', 'jquery-ui-slider' ) );
 			add_action( 'admin_head-edit-tags.php', array( $this, 'add_script_time' ) );
 		}
 	}
@@ -299,28 +297,6 @@ class RW_Taxonomy_Meta {
 	}
 
 	/******************** END TIME PICKER **********************/
-
-	/******************** BEGIN WYSIWYG **********************/
-
-	// Check field time
-	function check_field_wysiwyg() {
-		if ( !$this->has_field( 'wysiwyg' ) ) return;
-
-		wp_enqueue_scripts( 'jquery' );
-		//add_action('admin_head-edit-tags.php', array(&$this, 'add_script_wysiwyg'));
-		// We don't need to use this anymore because of wp_editor
-	}
-
-	// Custom script and style for time picker
-	function add_script_wysiwyg() {
-		require_once ABSPATH . '/wp-admin/includes/post.php';
-
-		wp_tiny_mce( false, array( 'editor_selector' => 'theEditor' ) );
-		// wp_editor( '', 'theeditor', $settings = array() );
-
-	}
-
-	/******************** END WYSIWYG **********************/
 
 	/******************** BEGIN META BOX PAGE **********************/
 

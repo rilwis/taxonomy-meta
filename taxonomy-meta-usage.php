@@ -11,6 +11,7 @@
 
 /********************* BEGIN DEFINITION OF META SECTIONS ***********************/
 
+global $meta_sections;
 $meta_sections = array();
 
 // first meta section
@@ -18,7 +19,7 @@ $meta_sections[] = array(
 	'title' => 'Personal Information',			// section title
 	'taxonomies' => array('people'),			// list of taxonomies. Default is array('category', 'post_tag'). Optional
 	'id' => 'first_section',					// ID of each section, will be the option name
-	
+
 	'fields' => array(							// list of meta fields
 		array(
 			'name' => 'Full name',					// field name
@@ -133,9 +134,27 @@ $meta_sections[] = array(
 	)
 );
 
-foreach ($meta_sections as $meta_section) {
-	$my_section = new RW_Taxonomy_Meta($meta_section);
+/**
+ * Register meta boxes
+ *
+ * @return void
+ */
+function YOUR_PREFIX_register_taxonomy_meta_boxes()
+{
+	// Make sure there's no errors when the plugin is deactivated or during upgrade
+	if ( !class_exists( 'RW_Taxonomy_Meta' ) )
+		return;
+
+	global $meta_sections;
+	foreach ( $meta_sections as $meta_section )
+	{
+		new RW_Taxonomy_Meta( $meta_section );
+	}
 }
+// Hook to 'admin_init' to make sure the class is loaded before
+// (in case using the class in another plugin)
+add_action( 'admin_init', 'YOUR_PREFIX_register_taxonomy_meta_boxes' );
+
 
 /********************* END DEFINITION OF META SECTIONS ***********************/
 
