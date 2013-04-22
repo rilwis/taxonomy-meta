@@ -515,7 +515,7 @@ class RW_Taxonomy_Meta {
 			// call defined method to save meta value, if there's no methods, call common one
 			$save_func = 'save_field_' . $type;
 			if ( method_exists( $this, $save_func ) ) {
-				call_user_func( array( $this, 'save_field_' . $type ), $meta, $field, $old, $new );
+				call_user_func( array( $this, 'save_field_' . $type ), &$meta, $field, $old, $new );
 			} else {
 				$this->save_field( $meta, $field, $old, $new );
 			}
