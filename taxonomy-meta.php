@@ -102,7 +102,8 @@ class RW_Taxonomy_Meta {
 			if ( 'image' != $field['type'] ) continue;
 
 			$id = $field['id'];
-			$rel = "{$this->_meta['id']}!{$_GET['tag_ID']}!{$field['id']}";
+			$tag_ID = isset( $_GET['tag_ID'] ) ? $_GET['tag_ID'] : '';
+			$rel = "{$this->_meta['id']}!{$tag_ID}!{$field['id']}";
 			$nonce_delete = wp_create_nonce( 'rw_ajax_delete_file' );
 			echo "
 			// thickbox upload
