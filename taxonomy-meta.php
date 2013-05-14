@@ -191,7 +191,9 @@ class RW_Taxonomy_Meta {
 		';
 		foreach ( $ids as $id ) {
 			echo "
-			$('#picker-$id').farbtastic('#$id');
+			if( $('#picker-$id').length > 0 ){
+				$('#picker-$id').farbtastic('#$id');
+			}
 			$('#select-$id').click(function(){
 				$('#picker-$id').toggle();
 				return false;
