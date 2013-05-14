@@ -57,7 +57,6 @@ class RW_Taxonomy_Meta {
 		echo '
 		<style type="text/css">
 		.rw-images li {margin: 0 10px 10px 0; float: left; width: 150px; height: 100px; text-align: center; border: 3px solid #ccc; position: relative}
-		.rw-images img {width: 150px; height: 100px}
 		.rw-images a {position: absolute; bottom: 0; right: 0; color: #fff; background: #000; font-weight: bold; padding: 5px}
 		</style>
 		';
@@ -443,11 +442,10 @@ class RW_Taxonomy_Meta {
 
 		echo "<ul id='rw-images-{$field['id']}' class='rw-images'>";
 		foreach ( $meta as $att ) {
-			$src = wp_get_attachment_image_src( $att, 'full' );
-			$src = $src[0];
+			$img = wp_get_attachment_image( $att, array( 150, 100 ) );
 
 			echo "<li id='item_{$att}'>
-					<img src='$src' />
+					$img
 					<a title='" . __( 'Delete this image' ) . "' class='rw-delete-file' href='#' rel='$rel!$att!$nonce_delete'>" . __( 'Delete' ) . "</a>
 					<input type='hidden' name='{$field['id']}[]' value='$att' />
 				</li>";
