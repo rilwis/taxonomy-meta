@@ -57,6 +57,7 @@ class RW_Taxonomy_Meta {
 		echo '
 		<style type="text/css">
 		.rw-images li {margin: 0 10px 10px 0; float: left; width: 150px; height: 100px; text-align: center; border: 3px solid #ccc; position: relative}
+		.rw-images img {max-width: 150px; max-height: 100px}
 		.rw-images a {position: absolute; bottom: 0; right: 0; color: #fff; background: #000; font-weight: bold; padding: 5px}
 		</style>
 		';
