@@ -67,14 +67,14 @@ class RW_Taxonomy_Meta {
 	// Check field upload and add needed actions
 	function check_field_upload() {
 		if ( $this->has_field( 'image' ) || $this->has_field( 'file' ) ) {
-			add_action( 'rwtm_load_page', array( $this, 'enqueue_scripts' ) );
+			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts_upload' ) );
 
 			add_action( 'admin_head', array( $this, 'add_script_upload' ) ); // add scripts for handling add/delete images
 			add_action( 'wp_ajax_rw_delete_file', array( $this, 'delete_file' ) );   // ajax delete files
 		}
 	}
 
-	function enqueue_scripts() {
+	function enqueue_scripts_upload() {
 		wp_enqueue_script( 'media-upload' );
 		wp_enqueue_script( 'thickbox' );
 		wp_enqueue_style( 'thickbox' );
@@ -96,7 +96,7 @@ class RW_Taxonomy_Meta {
 		';
 
 		echo '
-			// and enctype
+			// Add enctype
 			$("#edittag").attr("enctype", "multipart/form-data");
 		';
 
@@ -128,7 +128,8 @@ class RW_Taxonomy_Meta {
 		';
 
 		foreach ( $this->_fields as $field ) {
-			if ( 'image' != $field['type'] ) continue;
+			if ( 'image' != $field['type'] )
+				continue;
 
 			$id = $field['id'];
 			$rel = "{$this->_meta['id']}!{$_GET['tag_ID']}!{$field['id']}";
@@ -145,9 +146,9 @@ class RW_Taxonomy_Meta {
 					img_id = img_id.slice((img_id.search(/wp-image-/) + 9));
 
 					html = '<li id=\"item_' + img_id + '\">';
-					html += '<img src=\"' + img_url + '\" />';
+					html += '<img src=\"' + img_url + '\">';
 					html += '<a title=\"" . __( 'Delete this image' ) . "\" class=\"rw-delete-file\" href=\"#\" rel=\"$rel!' + img_id + '!$nonce_delete\">" . __( 'Delete' ) . "</a>';
-					html += '<input type=\"hidden\" name=\"{$id}[]\" value=\"' + img_id + '\" />';
+					html += '<input type=\"hidden\" name=\"{$id}[]\" value=\"' + img_id + '\">';
 					html += '</li>';
 
 					$('#rw-images-$id').append($(html));
@@ -346,7 +347,7 @@ class RW_Taxonomy_Meta {
 
 	function show_field_text( $field, $meta ) {
 		$this->show_field_begin( $field, $meta );
-		echo "<input type='text' name='{$field['id']}' id='{$field['id']}' value='$meta' size='40'  style='{$field['style']}' />";
+		echo "<input type='text' name='{$field['id']}' id='{$field['id']}' value='$meta' size='40'  style='{$field['style']}'>";
 		$this->show_field_end( $field, $meta );
 	}
 
@@ -404,7 +405,7 @@ class RW_Taxonomy_Meta {
 		if ( !is_array( $meta ) ) $meta = (array) $meta;
 
 		$this->show_field_begin( $field, $meta );
-		echo "{$field['desc']}<br />";
+		echo "{$field['desc']}<br>";
 
 		if ( !empty( $meta ) ) {
 			$nonce = wp_create_nonce( 'rw_ajax_delete_file' );
@@ -422,17 +423,19 @@ class RW_Taxonomy_Meta {
 		// show form upload
 		echo "<div style='clear: both'><strong>" . __( 'Upload new files' ) . "</strong></div>
 			<div class='new-files'>
-				<div class='file-input'><input type='file' name='{$field['id']}[]' /></div>
+				<div class='file-input'><input type='file' name='{$field['id']}[]'></div>
 				<a class='rw-add-file' href='javascript:void(0)'>" . __( 'Add more file' ) . "</a>
 			</div>
 		</td>";
 	}
 
 	function show_field_image( $field, $meta ) {
-		if ( !is_array( $meta ) ) $meta = (array) $meta;
+		if ( !is_array( $meta ) )
+			$meta = (array) $meta;
 
 		$this->show_field_begin( $field, $meta );
-		echo "{$field['desc']}<br />";
+		if ( $field['desc'] )
+			echo "{$field['desc']}<br>";
 
 		$nonce_delete = wp_create_nonce( 'rw_ajax_delete_file' );
 		$rel = "{$this->_meta['id']}!{$_GET['tag_ID']}!{$field['id']}";
@@ -443,9 +446,9 @@ class RW_Taxonomy_Meta {
 			$src = $src[0];
 
 			echo "<li id='item_{$att}'>
-					<img src='$src' />
+					<img src='$src'>
 					<a title='" . __( 'Delete this image' ) . "' class='rw-delete-file' href='#' rel='$rel!$att!$nonce_delete'>" . __( 'Delete' ) . "</a>
-					<input type='hidden' name='{$field['id']}[]' value='$att' />
+					<input type='hidden' name='{$field['id']}[]' value='$att'>
 				</li>";
 		}
 		echo '</ul>';
@@ -465,9 +468,9 @@ class RW_Taxonomy_Meta {
 		$this->show_field_begin( $field, $meta );
 		$html = array();
 		foreach ( $field['options'] as $key => $value ) {
-			$html[] = "<input type='checkbox' name='{$field['id']}[]' value='$key'" . checked( in_array( $key, $meta ), true, false ) . " /> $value";
+			$html[] = "<input type='checkbox' name='{$field['id']}[]' value='$key'" . checked( in_array( $key, $meta ), true, false ) . "> $value";
 		}
-		echo implode( '<br />', $html );
+		echo implode( '<br>', $html );
 		$this->show_field_end( $field, $meta );
 	}
 
@@ -543,9 +546,9 @@ class RW_Taxonomy_Meta {
 
 			$attachment = array(
 				'post_mime_type' => $file['type'],
-				'guid' => $file['url'],
-				'post_title' => preg_replace( '/\.[^.]+$/', '', basename( $filename ) ),
-				'post_content' => ''
+				'guid'           => $file['url'],
+				'post_title'     => preg_replace( '/\.[^.]+$/', '', basename( $filename ) ),
+				'post_content'   => '',
 			);
 			$id = wp_insert_attachment( $attachment, $filename );
 			if ( !is_wp_error( $id ) ) {
