@@ -4,7 +4,7 @@
 Plugin Name: Taxonomy Meta
 Plugin URI: http://www.deluxeblogtips.com/taxonomy-meta-script-for-wordpress
 Description: Add meta values to terms, mimic custom post fields
-Version: 1.1.6
+Version: 1.1.7
 Author: Rilwis
 Author URI: http://www.deluxeblogtips.com
 License: GPL2+
