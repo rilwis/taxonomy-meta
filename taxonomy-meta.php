@@ -1,5 +1,4 @@
 <?php
-
 /*
 Plugin Name: Taxonomy Meta
 Plugin URI: http://www.deluxeblogtips.com/taxonomy-meta-script-for-wordpress
@@ -14,6 +13,18 @@ class RW_Taxonomy_Meta {
 	protected $_meta;
 	protected $_taxonomies;
 	protected $_fields;
+
+	/**
+	 * Store all CSS of fields
+	 * @var string
+	 */
+	public $css = '';
+
+	/**
+	 * Store all JS of fields
+	 * @var string
+	 */
+	public $js = '';
 
 	function __construct( $meta ) {
 		if ( !is_admin() )
@@ -44,10 +55,11 @@ class RW_Taxonomy_Meta {
 		{
 			return;
 		}
+		$this->check_field_upload();
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
-
-		$this->check_field_upload();
+		add_action( 'admin_head', array( $this, 'output_css' ) );
+		add_action( 'admin_footer', array( $this, 'output_js' ), 100 );
 	}
 
 	/**
@@ -62,6 +74,26 @@ class RW_Taxonomy_Meta {
 		$this->check_field_time();
 	}
 
+	/**
+	 * Output CSS into header
+	 *
+	 * @return void
+	 */
+	function output_css()
+	{
+		echo $this->css ? '<style>' . $this->css . '</style>' : '';
+	}
+
+	/**
+	 * Output JS into footer
+	 *
+	 * @return void
+	 */
+	function output_js()
+	{
+		echo $this->js ? '<script>jQuery(function($){' . $this->js . '});</script>' : '';
+	}
+
 	/******************** BEGIN UPLOAD **********************/
 
 	// Check field upload and add needed actions
@@ -69,7 +101,7 @@ class RW_Taxonomy_Meta {
 		if ( $this->has_field( 'image' ) || $this->has_field( 'file' ) ) {
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts_upload' ) );
 
-			add_action( 'admin_head', array( $this, 'add_script_upload' ) ); // add scripts for handling add/delete images
+			$this->add_script_upload();
 			add_action( 'wp_ajax_rw_delete_file', array( $this, 'delete_file' ) );   // ajax delete files
 		}
 	}
@@ -82,26 +114,19 @@ class RW_Taxonomy_Meta {
 
 	// Add scripts for handling add/delete images
 	function add_script_upload() {
-		echo '
-		<style type="text/css">
+		$this->css .= '
 		.rw-images li {margin: 0 10px 10px 0; float: left; width: 150px; height: 100px; text-align: center; border: 3px solid #ccc; position: relative}
 		.rw-images img {max-width: 150px; max-height: 100px}
 		.rw-images a {position: absolute; bottom: 0; right: 0; color: #fff; background: #000; font-weight: bold; padding: 5px}
-		</style>
 		';
 
-		echo '
-		<script type="text/javascript">
-		jQuery(document).ready(function($) {
-		';
-
-		echo '
-			// Add enctype
+		// Add enctype
+		$this->js .= '
 			$("#edittag").attr("enctype", "multipart/form-data");
 		';
 
-		echo '
-			// add more file
+		// Add more file
+		$this->js .= '
 			$(".rw-add-file").click(function(){
 				var $first = $(this).parent().find(".file-input:first");
 				$first.clone().insertAfter($first).show();
@@ -109,8 +134,8 @@ class RW_Taxonomy_Meta {
 			});
 		';
 
-		echo '
-			// delete file
+		// Delete file
+		$this->js .= '
 			$(".rw-delete-file").click(function(){
 				var $parent = $(this).parent(),
 					data = $(this).attr("rel");
@@ -127,6 +152,7 @@ class RW_Taxonomy_Meta {
 			});
 		';
 
+		// Image upload
 		foreach ( $this->_fields as $field ) {
 			if ( 'image' != $field['type'] )
 				continue;
@@ -135,8 +161,8 @@ class RW_Taxonomy_Meta {
 			$tag_ID = isset( $_GET['tag_ID'] ) ? $_GET['tag_ID'] : '';
 			$rel = "{$this->_meta['id']}!{$tag_ID}!{$field['id']}";
 			$nonce_delete = wp_create_nonce( 'rw_ajax_delete_file' );
-			echo "
-			// thickbox upload
+
+			$this->js .= "
 			$('#rw_upload_$id').click(function(){
 				backup = window.send_to_editor;
 				window.send_to_editor = function(html) {
@@ -163,11 +189,6 @@ class RW_Taxonomy_Meta {
 			});
 			";
 		}
-
-		echo '
-		});
-		</script>
-		';
 	}
 
 	// Ajax delete files callback
@@ -204,16 +225,8 @@ class RW_Taxonomy_Meta {
 			return;
 		wp_enqueue_style( 'wp-color-picker' );
 		wp_enqueue_script( 'wp-color-picker' );
-		add_action( 'admin_footer', array( $this, 'add_script_color' ), 100 );
-	}
 
-	// Custom script for color picker
-	function add_script_color() {
-		echo '<script>
-		jQuery(function($){
-			$(".color").wpColorPicker();
-		});
-		</script>';
+		$this->js .= '$(".color").wpColorPicker();';
 	}
 
 	/******************** END COLOR PICKER **********************/
@@ -227,7 +240,7 @@ class RW_Taxonomy_Meta {
 
 		wp_enqueue_style( 'jquery-ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/smoothness/jquery-ui.min.css' );
 		wp_enqueue_script( 'jquery-ui-datepicker' );
-		add_action( 'admin_head', array( $this, 'add_script_date' ) );
+		$this->add_script_date();
 	}
 
 	// Custom script for date picker
@@ -238,20 +251,13 @@ class RW_Taxonomy_Meta {
 				$dates[$field['id']] = $field['format'];
 			}
 		}
-		echo '
-		<script type="text/javascript">
-		jQuery(document).ready(function($){
-		';
+
 		foreach ( $dates as $id => $format ) {
-			echo "$('#$id').datepicker({
+			$this->js .= "$('#$id').datepicker({
 				dateFormat: '$format',
 				showButtonPanel: true
 			});";
 		}
-		echo '
-		});
-		</script>
-		';
 	}
 
 	/******************** END DATE PICKER **********************/
@@ -266,7 +272,8 @@ class RW_Taxonomy_Meta {
 		wp_enqueue_style( 'jquery-ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/smoothness/jquery-ui.min.css' );
 		wp_enqueue_style( 'jquery-ui-timepicker', 'http://cdn.jsdelivr.net/jquery.ui.timepicker.addon/1.3/jquery-ui-timepicker-addon.css' );
 		wp_enqueue_script( 'jquery-ui-timepicker', 'http://cdn.jsdelivr.net/jquery.ui.timepicker.addon/1.3/jquery-ui-timepicker-addon.min.js', array( 'jquery-ui-datepicker', 'jquery-ui-slider' ) );
-		add_action( 'admin_head', array( $this, 'add_script_time' ) );
+
+		$this->add_script_time();
 	}
 
 	// Custom script and style for time picker
@@ -278,17 +285,9 @@ class RW_Taxonomy_Meta {
 				$times[$field['id']] = $field['format'];
 			}
 		}
-		echo '
-		<script type="text/javascript">
-		jQuery(document).ready(function($){
-		';
 		foreach ( $times as $id => $format ) {
-			echo "$('#$id').timepicker({showSecond: true, timeFormat: '$format'})";
+			$this->js .= "$('#$id').timepicker({showSecond: true, timeFormat: '$format'})";
 		}
-		echo '
-		});
-		</script>
-		';
 	}
 
 	/******************** END TIME PICKER **********************/
