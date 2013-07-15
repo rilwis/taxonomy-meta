@@ -22,8 +22,6 @@ class RW_Taxonomy_Meta {
 
 		$this->normalize();
 
-
-
 		add_action( 'admin_init', array( $this, 'add' ), 100 );
 		add_action( 'edit_term', array( $this, 'save' ), 10, 2 );
 		add_action( 'delete_term', array( $this, 'delete' ), 10, 2 );
@@ -170,38 +168,20 @@ class RW_Taxonomy_Meta {
 
 	// Check field color
 	function check_field_color() {
-		if ( $this->has_field( 'color' ) ) {
-			wp_enqueue_style( 'farbtastic' );            // enqueue built-in script and style for color picker
-			wp_enqueue_script( 'farbtastic' );
-			add_action( 'admin_head-edit-tags.php', array( $this, 'add_script_color' ) ); // add our custom script for color picker
-		}
+		if ( !$this->has_field( 'color' ) )
+			return;
+		wp_enqueue_style( 'wp-color-picker' );
+		wp_enqueue_script( 'wp-color-picker' );
+		add_action( 'admin_footer-edit-tags.php', array( $this, 'add_script_color' ), 100 );
 	}
 
 	// Custom script for color picker
 	function add_script_color() {
-		$ids = array();
-		foreach ( $this->_fields as $field ) {
-			if ( 'color' == $field['type'] ) {
-				$ids[] = $field['id'];
-			}
-		}
-		echo '
-		<script type="text/javascript">
-		jQuery(document).ready(function($){
-		';
-		foreach ( $ids as $id ) {
-			echo "
-			$('#picker-$id').farbtastic('#$id');
-			$('#select-$id').click(function(){
-				$('#picker-$id').toggle();
-				return false;
-			});
-			";
-		}
-		echo '
+		echo '<script>
+		jQuery(function($){
+			$(".color").wpColorPicker();
 		});
-		</script>
-		';
+		</script>';
 	}
 
 	/******************** END COLOR PICKER **********************/
@@ -251,31 +231,17 @@ class RW_Taxonomy_Meta {
 
 	// Check field time
 	function check_field_time() {
-		if ( $this->has_field( 'time' ) ) {
-			global $concatenate_scripts;
-			$concatenate_scripts = false;
-
-			// add style and script, use proper jQuery UI version
-			wp_enqueue_style( 'rw-jquery-ui-css', 'http://ajax.googleapis.com/ajax/libs/jqueryui/' . $this->get_jqueryui_ver() . '/themes/base/jquery-ui.css' );
-			wp_enqueue_script( 'rw-timepicker', 'https://github.com/trentrichardson/jQuery-Timepicker-Addon/raw/master/jquery-ui-timepicker-addon.js', array( 'jquery-ui-datepicker', 'jquery-ui-slider' ) );
-			add_action( 'admin_head-edit-tags.php', array( $this, 'add_script_time' ) );
-		}
+		if ( !$this->has_field( 'time' ) )
+			return;
+		// add style and script, use proper jQuery UI version
+		wp_enqueue_style( 'jquery-ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/' . $this->get_jqueryui_ver() . '/themes/base/jquery-ui.css' );
+		wp_enqueue_style( 'jquery-ui-timepicker', 'http://cdn.jsdelivr.net/jquery.ui.timepicker.addon/1.3/jquery-ui-timepicker-addon.css' );
+		wp_enqueue_script( 'jquery-ui-timepicker', 'http://cdn.jsdelivr.net/jquery.ui.timepicker.addon/1.3/jquery-ui-timepicker-addon.min.js', array( 'jquery-ui-datepicker', 'jquery-ui-slider' ) );
+		add_action( 'admin_head-edit-tags.php', array( $this, 'add_script_time' ) );
 	}
 
 	// Custom script and style for time picker
 	function add_script_time() {
-		// style
-		echo '
-		<style type="text/css">
-		.ui-timepicker-div {font-size: 0.9em;}
-		.ui-timepicker-div .ui-widget-header {margin-bottom: 8px;}
-		.ui-timepicker-div dl {text-align: left;}
-		.ui-timepicker-div dl dt {height: 25px;}
-		.ui-timepicker-div dl dd {margin: -25px 0 10px 65px;}
-		.ui-timepicker-div td {font-size: 90%;}
-		</style>
-		';
-
 		// script
 		$times = array();
 		foreach ( $this->_fields as $field ) {
@@ -348,7 +314,7 @@ class RW_Taxonomy_Meta {
 	}
 
 	function show_field_end( $field, $meta ) {
-		echo "<br />{$field['desc']}</td>";
+		echo $field['desc'] ? "<br>{$field['desc']}</td>" : '';
 	}
 
 	function show_field_text( $field, $meta ) {
@@ -397,8 +363,7 @@ class RW_Taxonomy_Meta {
 
 	function show_field_wysiwyg( $field, $meta ) {
 		$this->show_field_begin( $field, $meta );
-		//echo "<textarea name='{$field['id']}' id='{$field['id']}' class='{$field['id']} theEditor' cols='60' rows='15' style='{$field['style']}'>$meta</textarea>";
-		wp_editor( $meta, $field["id"], array( 'textarea_name'=>$field["id"], 'editor_class'=> $field["id"].' theEditor' ) );
+		wp_editor( $meta, $field['id'], array( 'textarea_name'=>$field['id'], 'editor_class'=> $field['id'].' theEditor' ) );
 		$this->show_field_end( $field, $meta );
 	}
 
@@ -458,9 +423,7 @@ class RW_Taxonomy_Meta {
 	function show_field_color( $field, $meta ) {
 		if ( empty( $meta ) ) $meta = '#';
 		$this->show_field_begin( $field, $meta );
-		echo "<input type='text' name='{$field['id']}' id='{$field['id']}' value='$meta' size='8' style='{$field['style']}' />
-			  <a href='#' id='select-{$field['id']}'>" . __( 'Select a color' ) . "</a>
-			  <div style='display:none' id='picker-{$field['id']}'></div>";
+		echo "<input type='text' name='{$field['id']}' id='{$field['id']}' value='$meta' class='color'>";
 		$this->show_field_end( $field, $meta );
 	}
 
