@@ -19,10 +19,10 @@ class RW_Taxonomy_Meta {
 		if ( !is_admin() ) return;
 
 		$this->_meta = $meta;
-		$this->_taxonomies = $this->_meta['taxonomies'];
-		$this->_fields = $this->_meta['fields'];
 
-		$this->add_missed_values();
+		$this->normalize();
+
+
 
 		add_action( 'admin_init', array( $this, 'add' ), 100 );
 		add_action( 'edit_term', array( $this, 'save' ), 10, 2 );
@@ -583,30 +583,33 @@ class RW_Taxonomy_Meta {
 	/******************** BEGIN HELPER FUNCTIONS **********************/
 
 	// Add missed values for meta box
-	function add_missed_values() {
-		// default values for meta box
+	function normalize() {
+		// Default values for meta box
 		$this->_meta = array_merge( array(
-				'taxonomies' => array( 'category', 'post_tag' )
-			), $this->_meta );
+			'taxonomies' => array( 'category', 'post_tag' )
+		), $this->_meta );
 
-		// default values for fields
+		$this->_taxonomies = $this->_meta['taxonomies'];
+		$this->_fields = $this->_meta['fields'];
+
+		// Default values for fields
 		foreach ( $this->_fields as & $field ) {
 			$multiple = in_array( $field['type'], array( 'checkbox_list', 'file', 'image' ) ) ? true : false;
 			$std = $multiple ? array() : '';
 			$format = 'date' == $field['type'] ? 'yy-mm-dd' : ( 'time' == $field['type'] ? 'hh:mm' : '' );
 			$style = 'width: 97%';
 			$optgroups = false;
-			if ( 'select' == $field['type'] ) $style = 'height: auto';
+			if ( 'select' == $field['type'] )
+				$style = 'height: auto';
 
 			$field = array_merge( array(
-					'multiple' => $multiple,
-					'optgroups' => $optgroups,
-					'std' => $std,
-					'desc' => '',
-					'format' => $format,
-					'style' => $style,
-					'validate_func' => ''
-				), $field );
+				'multiple'  => $multiple,
+				'optgroups' => $optgroups,
+				'std'       => $std,
+				'desc'      => '',
+				'format'    => $format,
+				'style'     => $style,
+			), $field );
 		}
 	}
 
