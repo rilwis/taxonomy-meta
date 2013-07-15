@@ -223,7 +223,7 @@ class RW_Taxonomy_Meta {
 		if ( !$this->has_field( 'date' ) )
 			return;
 
-		wp_enqueue_style( 'jquery-ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/base/jquery-ui.css' );
+		wp_enqueue_style( 'jquery-ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/smoothness/jquery-ui.min.css' );
 		wp_enqueue_script( 'jquery-ui-datepicker' );
 		add_action( 'admin_head', array( $this, 'add_script_date' ) );
 	}
@@ -261,7 +261,7 @@ class RW_Taxonomy_Meta {
 		if ( !$this->has_field( 'time' ) )
 			return;
 		// add style and script, use proper jQuery UI version
-		wp_enqueue_style( 'jquery-ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/base/jquery-ui.css' );
+		wp_enqueue_style( 'jquery-ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/smoothness/jquery-ui.min.css' );
 		wp_enqueue_style( 'jquery-ui-timepicker', 'http://cdn.jsdelivr.net/jquery.ui.timepicker.addon/1.3/jquery-ui-timepicker-addon.css' );
 		wp_enqueue_script( 'jquery-ui-timepicker', 'http://cdn.jsdelivr.net/jquery.ui.timepicker.addon/1.3/jquery-ui-timepicker-addon.min.js', array( 'jquery-ui-datepicker', 'jquery-ui-slider' ) );
 		add_action( 'admin_head', array( $this, 'add_script_time' ) );
@@ -341,7 +341,7 @@ class RW_Taxonomy_Meta {
 	}
 
 	function show_field_end( $field, $meta ) {
-		echo $field['desc'] ? "<br>{$field['desc']}</td>" : '';
+		echo $field['desc'] ? "<br>{$field['desc']}</td>" : '</td>';
 	}
 
 	function show_field_text( $field, $meta ) {
@@ -377,20 +377,26 @@ class RW_Taxonomy_Meta {
 
 	function show_field_radio( $field, $meta ) {
 		$this->show_field_begin( $field, $meta );
+		$html = array();
 		foreach ( $field['options'] as $key => $value ) {
-			echo "<input type='radio' name='{$field['id']}' value='$key'" . checked( $meta, $key, false ) . " /> $value ";
+			$html[] .= "<label><input type='radio' name='{$field['id']}' value='$key'" . checked( $meta, $key, false ) . "> $value</label>";
 		}
+		echo implode( ' ', $html );
 		$this->show_field_end( $field, $meta );
 	}
 
 	function show_field_checkbox( $field, $meta ) {
 		$this->show_field_begin( $field, $meta );
-		echo "<input type='checkbox' name='{$field['id']}'" . checked( !empty( $meta ), true, false ) . " /> {$field['desc']}</td>";
+		echo "<label><input type='checkbox' name='{$field['id']}' value='1'" . checked( !empty( $meta ), true, false ) . "></label>";
+		$this->show_field_end( $field, $meta );
 	}
 
 	function show_field_wysiwyg( $field, $meta ) {
 		$this->show_field_begin( $field, $meta );
-		wp_editor( $meta, $field['id'], array( 'textarea_name'=>$field['id'], 'editor_class'=> $field['id'].' theEditor' ) );
+		wp_editor( $meta, $field['id'], array(
+			'textarea_name' => $field['id'],
+			'editor_class'  => $field['id'].' theEditor',
+		) );
 		$this->show_field_end( $field, $meta );
 	}
 
@@ -486,7 +492,8 @@ class RW_Taxonomy_Meta {
 		*/
 
 		$metas = get_option( $this->_meta['id'] );
-		if ( !is_array( $metas ) ) $metas = (array) $metas;
+		if ( !is_array( $metas ) )
+			$metas = (array) $metas;
 
 		$meta = isset( $metas[$term_id] ) ? $metas[$term_id] : array();
 
@@ -497,15 +504,10 @@ class RW_Taxonomy_Meta {
 			$old = isset( $meta[$name] ) ? $meta[$name] : ( $field['multiple'] ? array() : '' );
 			$new = isset( $_POST[$name] ) ? $_POST[$name] : ( $field['multiple'] ? array() : '' );
 
-			// validate meta value
-			if ( class_exists( 'RW_Taxonomy_Meta_Validate' ) && method_exists( 'RW_Taxonomy_Meta_Validate', $field['validate_func'] ) ) {
-				$new = call_user_func( array( 'RW_Taxonomy_Meta_Validate', $field['validate_func'] ), $new );
-			}
-
-			// call defined method to save meta value, if there's no methods, call common one
+			// Call defined method to save meta value, if there's no methods, call common one
 			$save_func = 'save_field_' . $type;
 			if ( method_exists( $this, $save_func ) ) {
-				call_user_func( array( $this, 'save_field_' . $type ), $meta, $field, $old, $new );
+				$meta = call_user_func( array( $this, $save_func ), $meta, $field, $old, $new );
 			} else {
 				$this->save_field( $meta, $field, $old, $new );
 			}
@@ -527,13 +529,7 @@ class RW_Taxonomy_Meta {
 		}
 	}
 
-	function save_field_wysiwyg( &$meta, $field, $old, $new ) {
-		$new = stripslashes( $new );
-		$new = wpautop( $new );
-		$this->save_field( $meta, $field, $old, $new );
-	}
-
-	function save_field_file( &$meta, $field, $old, $new ) {
+	function save_field_file( $meta, $field, $old, $new ) {
 		$name = $field['id'];
 		if ( empty( $_FILES[$name] ) ) return;
 
@@ -557,6 +553,8 @@ class RW_Taxonomy_Meta {
 				$meta[$name][] = $id;
 			}
 		}
+
+		return $meta;
 	}
 
 	/******************** END META BOX SAVE **********************/

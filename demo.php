@@ -28,30 +28,30 @@ function YOUR_PREFIX_register_taxonomy_meta_boxes()
 
 	// First meta section
 	$meta_sections[] = array(
-		'title' => 'Standard Fields',                  // section title
+		'title'      => 'Standard Fields',             // section title
 		'taxonomies' => array('category', 'post_tag'), // list of taxonomies. Default is array('category', 'post_tag'). Optional
-		'id' => 'option_name',                         // ID of each section, will be the option name
+		'id'         => 'option_name',                 // ID of each section, will be the option name
 
 		'fields' => array(                             // List of meta fields
 			// TEXT
 			array(
 				'name' => 'Text',                      // field name
 				'desc' => 'Simple text field',         // field description, optional
-				'id' => 'text',                        // field id, i.e. the meta key
+				'id'   => 'text',                      // field id, i.e. the meta key
 				'type' => 'text',                      // field type
-				'std' => 'Text',                       // default value, optional
+				'std'  => 'Text',                      // default value, optional
 			),
 			// TEXTAREA
 			array(
 				'name' => 'Textarea',
-				'id' => 'textarea',
+				'id'   => 'textarea',
 				'type' => 'textarea',
 			),
 			// SELECT
 			array(
-				'name' => 'Select',
-				'id' => 'select',
-				'type' => 'select',
+				'name'    => 'Select',
+				'id'      => 'select',
+				'type'    => 'select',
 				'options' => array(                     // Array of value => label pairs for radio options
 					'value1' => 'Label 1',
 					'value2' => 'Label 2'
@@ -59,10 +59,10 @@ function YOUR_PREFIX_register_taxonomy_meta_boxes()
 			),
 			// RADIO
 			array(
-				'name' => 'Radio',
-				'id' => 'radio',
-				'type' => 'radio',
-				'options' => array(                    // Array of value => label pairs for radio options
+				'name'    => 'Radio',
+				'id'      => 'radio',
+				'type'    => 'radio',
+				'options' => array(                     // Array of value => label pairs for radio options
 					'value1' => 'Label 1',
 					'value2' => 'Label 2'
 				),
@@ -70,70 +70,65 @@ function YOUR_PREFIX_register_taxonomy_meta_boxes()
 			// CHECKBOX
 			array(
 				'name' => 'Checkbox',
-				'id' => 'checkbox',
+				'id'   => 'checkbox',
 				'type' => 'checkbox',
 			),
-
-
-
-
-
-		)
+		),
 	);
 
 	// Second meta section
 	$meta_sections[] = array(
 		'title' => 'Advanced Fields',
-		'id' => 'option_name',
+		'id'    => 'option_name',
 
 		'fields' => array(
 			// CHECKBOX LIST
 			array(
-				'name' => 'Checkbox list',
-				'id' => 'checkbox_list',
-				'type' => 'checkbox_list',
+				'name'    => 'Checkbox list',
+				'id'      => 'checkbox_list',
+				'type'    => 'checkbox_list',
 				'options' => array(                     // Array of value => label pairs for radio options
 					'value1' => 'Label 1',
 					'value2' => 'Label 2'
 				),
-				'desc' => 'What do you do in free time?'
+				'desc'    => 'What do you do in free time?'
 			),
 			// WYSIWYG
 			array(
 				'name' => 'WYSIWYG Editor',
-				'id' => 'wysiwyg',
+				'id'   => 'wysiwyg',
 				'type' => 'wysiwyg',
 			),
 			// DATE PICKER
 			array(
-				'name' => 'Date Picker',
-				'id' => 'date',
-				'type' => 'date',
+				'name'   => 'Date Picker',
+				'id'     => 'date',
+				'type'   => 'date',
 				'format' => 'd MM, yy',                // Date format, default yy-mm-dd. Optional. See: http://goo.gl/po8vf
 			),
 			// TIME PICKER
 			array(
-				'name' => 'Time Picker',
-				'id' => 'time',
-				'type' => 'time',
+				'name'   => 'Time Picker',
+				'id'     => 'time',
+				'type'   => 'time',
 				'format' => 'hh:mm:ss',                // Time format, default hh:mm. Optional. See: http://goo.gl/hXHWz
 			),
 			// FILE
 			array(
 				'name' => 'File',
-				'id' => 'file',
+				'id'   => 'file',
 				'type' => 'file',
 			),
 			// IMAGE
 			array(
 				'name' => 'Image',
-				'id' => 'image',
+				'id'   => 'image',
 				'type' => 'image',
 			),
 			// COLOR PICKER
 			array(
 				'name' => 'Color Picker',
-				'id' => 'color',
+				'id'   => 'color',
 				'type' => 'color',
 			),
 		),
