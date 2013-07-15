@@ -191,7 +191,7 @@ class RW_Taxonomy_Meta {
 		}
 
 		update_option( $meta_id, $metas );
-		die();
+		die( '0' );
 	}
 
 	/******************** END UPLOAD **********************/
@@ -209,9 +209,34 @@ class RW_Taxonomy_Meta {
 
 	// Custom script for color picker
 	function add_script_color() {
+<<<<<<< HEAD
 		echo '<script>
 		jQuery(function($){
 			$(".color").wpColorPicker();
+=======
+		$ids = array();
+		foreach ( $this->_fields as $field ) {
+			if ( 'color' == $field['type'] ) {
+				$ids[] = $field['id'];
+			}
+		}
+		echo '
+		<script type="text/javascript">
+		jQuery(document).ready(function($){
+		';
+		foreach ( $ids as $id ) {
+			echo "
+			if( $('#picker-$id').length > 0 ){
+				$('#picker-$id').farbtastic('#$id');
+			}
+			$('#select-$id').click(function(){
+				$('#picker-$id').toggle();
+				return false;
+			});
+			";
+		}
+		echo '
+>>>>>>> 447cc3cf9cf7f853e787863157a91448747a6b2e
 		});
 		</script>';
 	}
@@ -446,7 +471,11 @@ class RW_Taxonomy_Meta {
 			$img = wp_get_attachment_image( $att, array( 150, 100 ) );
 
 			echo "<li id='item_{$att}'>
+<<<<<<< HEAD
 					<img src='$src'>
+=======
+					$img
+>>>>>>> 447cc3cf9cf7f853e787863157a91448747a6b2e
 					<a title='" . __( 'Delete this image' ) . "' class='rw-delete-file' href='#' rel='$rel!$att!$nonce_delete'>" . __( 'Delete' ) . "</a>
 					<input type='hidden' name='{$field['id']}[]' value='$att'>
 				</li>";
@@ -510,7 +539,11 @@ class RW_Taxonomy_Meta {
 			// Call defined method to save meta value, if there's no methods, call common one
 			$save_func = 'save_field_' . $type;
 			if ( method_exists( $this, $save_func ) ) {
+<<<<<<< HEAD
 				$meta = call_user_func( array( $this, $save_func ), $meta, $field, $old, $new );
+=======
+				call_user_func( array( $this, 'save_field_' . $type ), &$meta, $field, $old, $new );
+>>>>>>> 447cc3cf9cf7f853e787863157a91448747a6b2e
 			} else {
 				$this->save_field( $meta, $field, $old, $new );
 			}
