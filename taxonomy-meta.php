@@ -16,20 +16,50 @@ class RW_Taxonomy_Meta {
 	protected $_fields;
 
 	function __construct( $meta ) {
-		if ( !is_admin() ) return;
+		if ( !is_admin() )
+			return;
 
 		$this->_meta = $meta;
-
 		$this->normalize();
 
 		add_action( 'admin_init', array( $this, 'add' ), 100 );
 		add_action( 'edit_term', array( $this, 'save' ), 10, 2 );
 		add_action( 'delete_term', array( $this, 'delete' ), 10, 2 );
-		add_action( 'admin_enqueue_scripts', array( $this, 'check_field_date' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'check_field_color' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'check_field_time' ) );
+		add_action( 'load-edit-tags.php', array( $this, 'load_edit_page' ) );
+	}
+
+	/**
+	 * Enqueue scripts and styles
+	 *
+	 * @return void
+	 */
+	function load_edit_page()
+	{
+		$screen = get_current_screen();
+		if (
+			'edit-tags' != $screen->base
+			|| empty( $_GET['action'] ) || 'edit' != $_GET['action']
+			|| !in_array( $screen->taxonomy, $this->_taxonomies )
+		)
+		{
+			return;
+		}
+
+		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 
 		$this->check_field_upload();
+	}
+
+	/**
+	 * Enqueue scripts and styles
+	 *
+	 * @return void
+	 */
+	function admin_enqueue_scripts()
+	{
+		$this->check_field_date();
+		$this->check_field_color();
+		$this->check_field_time();
 	}
 
 	/******************** BEGIN UPLOAD **********************/
@@ -37,9 +67,9 @@ class RW_Taxonomy_Meta {
 	// Check field upload and add needed actions
 	function check_field_upload() {
 		if ( $this->has_field( 'image' ) || $this->has_field( 'file' ) ) {
-			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+			add_action( 'rwtm_load_page', array( $this, 'enqueue_scripts' ) );
 
-			add_action( 'admin_head-edit-tags.php', array( $this, 'add_script_upload' ) ); // add scripts for handling add/delete images
+			add_action( 'admin_head', array( $this, 'add_script_upload' ) ); // add scripts for handling add/delete images
 			add_action( 'wp_ajax_rw_delete_file', array( $this, 'delete_file' ) );   // ajax delete files
 		}
 	}
@@ -172,7 +202,7 @@ class RW_Taxonomy_Meta {
 			return;
 		wp_enqueue_style( 'wp-color-picker' );
 		wp_enqueue_script( 'wp-color-picker' );
-		add_action( 'admin_footer-edit-tags.php', array( $this, 'add_script_color' ), 100 );
+		add_action( 'admin_footer', array( $this, 'add_script_color' ), 100 );
 	}
 
 	// Custom script for color picker
@@ -190,15 +220,12 @@ class RW_Taxonomy_Meta {
 
 	// Check field date
 	function check_field_date() {
-		if ( $this->has_field( 'date' ) ) {
-			global $concatenate_scripts;
-			$concatenate_scripts = false;
+		if ( !$this->has_field( 'date' ) )
+			return;
 
-			// add style and script, use proper jQuery UI version
-			wp_enqueue_style( 'rw-jquery-ui-css', 'http://ajax.googleapis.com/ajax/libs/jqueryui/' . $this->get_jqueryui_ver() . '/themes/base/jquery-ui.css' );
-			wp_enqueue_script( 'jquery-ui-datepicker' );
-			add_action( 'admin_head-edit-tags.php', array( $this, 'add_script_date' ) );
-		}
+		wp_enqueue_style( 'jquery-ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/base/jquery-ui.css' );
+		wp_enqueue_script( 'jquery-ui-datepicker' );
+		add_action( 'admin_head', array( $this, 'add_script_date' ) );
 	}
 
 	// Custom script for date picker
@@ -234,10 +261,10 @@ class RW_Taxonomy_Meta {
 		if ( !$this->has_field( 'time' ) )
 			return;
 		// add style and script, use proper jQuery UI version
-		wp_enqueue_style( 'jquery-ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/' . $this->get_jqueryui_ver() . '/themes/base/jquery-ui.css' );
+		wp_enqueue_style( 'jquery-ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/base/jquery-ui.css' );
 		wp_enqueue_style( 'jquery-ui-timepicker', 'http://cdn.jsdelivr.net/jquery.ui.timepicker.addon/1.3/jquery-ui-timepicker-addon.css' );
 		wp_enqueue_script( 'jquery-ui-timepicker', 'http://cdn.jsdelivr.net/jquery.ui.timepicker.addon/1.3/jquery-ui-timepicker-addon.min.js', array( 'jquery-ui-datepicker', 'jquery-ui-slider' ) );
-		add_action( 'admin_head-edit-tags.php', array( $this, 'add_script_time' ) );
+		add_action( 'admin_head', array( $this, 'add_script_time' ) );
 	}
 
 	// Custom script and style for time picker
@@ -598,16 +625,6 @@ class RW_Taxonomy_Meta {
 			}
 		}
 		$files = $output;
-	}
-
-	// Get proper jQuery UI version to not conflict with WP admin scripts
-	function get_jqueryui_ver() {
-		global $wp_version;
-		if ( version_compare( $wp_version, '3.1', '>=' ) ) {
-			return '1.8.10';
-		}
-
-		return '1.7.3';
 	}
 
 	/******************** END HELPER FUNCTIONS **********************/
