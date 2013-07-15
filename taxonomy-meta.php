@@ -99,27 +99,26 @@ class RW_Taxonomy_Meta {
 	// Check field upload and add needed actions
 	function check_field_upload() {
 		if ( $this->has_field( 'image' ) || $this->has_field( 'file' ) ) {
-			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts_upload' ) );
+			add_action( 'admin_enqueue_scripts', 'wp_enqueue_media' );
 
 			$this->add_script_upload();
 			add_action( 'wp_ajax_rw_delete_file', array( $this, 'delete_file' ) );   // ajax delete files
 		}
 	}
 
-	function enqueue_scripts_upload() {
-		wp_enqueue_script( 'media-upload' );
-		wp_enqueue_script( 'thickbox' );
-		wp_enqueue_style( 'thickbox' );
+	/**
+	 * Enqueue scripts for upload
+	 *
+	 * @return void
+	 */
+	function enqueue_scritps_upload()
+	{
+		wp_enqueue_media();
+		wp_enqueue_script( 'underscore' );
 	}
 
 	// Add scripts for handling add/delete images
 	function add_script_upload() {
-		$this->css .= '
-		.rw-images li {margin: 0 10px 10px 0; float: left; width: 150px; height: 100px; text-align: center; border: 3px solid #ccc; position: relative}
-		.rw-images img {max-width: 150px; max-height: 100px}
-		.rw-images a {position: absolute; bottom: 0; right: 0; color: #fff; background: #000; font-weight: bold; padding: 5px}
-		';
-
 		// Add enctype
 		$this->js .= '
 			$("#edittag").attr("enctype", "multipart/form-data");
@@ -152,38 +151,55 @@ class RW_Taxonomy_Meta {
 			});
 		';
 
+		if ( !$this->has_field( 'image' ) )
+			return;
+
+		$this->css .= '
+			.rwtm-images {overflow: hidden; margin-bottom: 10px}
+			.rwtm-images li {margin: 0 10px 10px 0; float: left; width: 150px; height: 100px; text-align: center; border: 3px solid #ccc; position: relative}
+			.rwtm-images img {max-width: 150px; max-height: 100px}
+			.rwtm-images a {position: absolute; bottom: 0; right: 0; color: #fff; background: #000; font-weight: bold; padding: 5px}
+		';
+
 		// Image upload
 		foreach ( $this->_fields as $field ) {
 			if ( 'image' != $field['type'] )
 				continue;
 
 			$id = $field['id'];
-			$tag_ID = isset( $_GET['tag_ID'] ) ? $_GET['tag_ID'] : '';
-			$rel = "{$this->_meta['id']}!{$tag_ID}!{$field['id']}";
-			$nonce_delete = wp_create_nonce( 'rw_ajax_delete_file' );
 
 			$this->js .= "
-			$('#rw_upload_$id').click(function(){
-				backup = window.send_to_editor;
-				window.send_to_editor = function(html) {
-					var el = $(html).is('a') ? $('img', html) : $(html),
-						img_url = el.attr('src'),
-						img_id = el.attr('class');
+			$('#rwtm-image-upload-$id').click(function(){
 
-					img_id = img_id.slice((img_id.search(/wp-image-/) + 9));
+				var template = '<# _.each( attachments, function( attachment ) { #>';
+				template += '<li>';
+				template += '<img src=\"{{{ attachment.sizes.full.url }}}\">';
+				template += '<input type=\"hidden\" name=\"{$id}[]\" value=\"{{{ attachment.id }}}\">';
+				template += '</li>';
+				template += '<# } ); #>';
 
-					html = '<li id=\"item_' + img_id + '\">';
-					html += '<img src=\"' + img_url + '\">';
-					html += '<a title=\"" . __( 'Delete this image' ) . "\" class=\"rw-delete-file\" href=\"#\" rel=\"$rel!' + img_id + '!$nonce_delete\">" . __( 'Delete' ) . "</a>';
-					html += '<input type=\"hidden\" name=\"{$id}[]\" value=\"' + img_id + '\">';
-					html += '</li>';
+				var \$imageList = \$( this ).siblings( '.rwtm-images' );
 
-					$('#rw-images-$id').append($(html));
+				var frame = wp.media( {
+					multiple : true,
+					title    : 'Select Image',
+					library  : {
+						type: 'image'
+					}
+				} );
 
-					tb_remove();
-					window.send_to_editor = backup;
-				}
-				tb_show('', 'media-upload.php?type=image&TB_iframe=true');
+				frame.on( 'select', function()
+				{
+					// Get selections
+					var selection = frame.state().get( 'selection' ).toJSON();
+
+					\$imageList.append( _.template( template, { attachments: selection }, {
+						evaluate:    /<#([\s\S]+?)#>/g,
+						interpolate: /\{\{\{([\s\S]+?)\}\}\}/g,
+						escape:      /\{\{([^\}]+?)\}\}(?!\})/g
+					} ) );
+				} );
+				frame.open();
 
 				return false;
 			});
@@ -440,19 +456,19 @@ class RW_Taxonomy_Meta {
 		$nonce_delete = wp_create_nonce( 'rw_ajax_delete_file' );
 		$rel = "{$this->_meta['id']}!{$_GET['tag_ID']}!{$field['id']}";
 
-		echo "<ul id='rw-images-{$field['id']}' class='rw-images'>";
+		echo "<ul class='rwtm-images'>";
 		foreach ( $meta as $att ) {
-			$img = wp_get_attachment_image( $att, array( 150, 100 ) );
+			$img = wp_get_attachment_image( $att );
 
-			echo "<li id='item_{$att}'>
-					<img src='$src'>
+			echo "<li>
+					{$img}
 					<a title='" . __( 'Delete this image' ) . "' class='rw-delete-file' href='#' rel='$rel!$att!$nonce_delete'>" . __( 'Delete' ) . "</a>
 					<input type='hidden' name='{$field['id']}[]' value='$att'>
 				</li>";
 		}
 		echo '</ul>';
 
-		echo "<a href='#' style='float: left; clear: both; margin-top: 10px' id='rw_upload_{$field['id']}' class='rw_upload button'>" . __( 'Upload new image' ) . "</a>";
+		echo "<a href='#' id='rwtm-image-upload-{$field['id']}' class='rwtm-image-upload button'>" . __( 'Select Image' ) . "</a>";
 	}
 
 	function show_field_color( $field, $meta ) {
