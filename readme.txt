@@ -4,7 +4,7 @@ Donate link: http://www.deluxeblogtips.com/donate
 Tags: custom-fields, custom-field, meta, taxonomy, term
 Requires at least: 3.3
 Tested up to: 3.5.2
-Stable tag: 1.1.7
+Stable tag: 1.2
 
 Taxonomy Meta plugin helps you easily add meta values to terms, mimic custom post fields
 
@@ -29,9 +29,10 @@ Support input types: text, textarea, checkbox, radio box, select, wysiwyg, file 
 
 == Changelog ==
 
-= 1.1.7 =
+= 1.2 =
 
 - Improvement: Better enqueue scripts and styles
+- Improvement: File and image upload now use new media uploader
 - Fix bug: not saving wysiwyg field
 
 = 1.1.6 =
