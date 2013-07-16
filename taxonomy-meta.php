@@ -55,7 +55,6 @@ class RW_Taxonomy_Meta {
 		{
 			return;
 		}
-		$this->check_field_upload();
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 		add_action( 'admin_head', array( $this, 'output_css' ) );
@@ -69,6 +68,9 @@ class RW_Taxonomy_Meta {
 	 */
 	function admin_enqueue_scripts()
 	{
+		wp_enqueue_script( 'jquery' );
+
+		$this->check_field_upload();
 		$this->check_field_date();
 		$this->check_field_color();
 		$this->check_field_time();
@@ -94,72 +96,79 @@ class RW_Taxonomy_Meta {
 		echo $this->js ? '<script>jQuery(function($){' . $this->js . '});</script>' : '';
 	}
 
-	/******************** BEGIN UPLOAD **********************/
+	/******************** BEGIN FIELDS **********************/
 
 	// Check field upload and add needed actions
 	function check_field_upload() {
-		if ( $this->has_field( 'image' ) || $this->has_field( 'file' ) ) {
-			add_action( 'admin_enqueue_scripts', 'wp_enqueue_media' );
+		if ( !$this->has_field( 'image' ) && $this->has_field( 'file' ) )
+			return;
 
-			$this->add_script_upload();
-			add_action( 'wp_ajax_rw_delete_file', array( $this, 'delete_file' ) );   // ajax delete files
-		}
-	}
+		$this->css .= '
+			.rwtm-uploaded { overflow: hidden; margin: 0 0 10px}
+			.rwtm-files {padding-left: 20px}
+			.rwtm-images li {margin: 0 10px 10px 0; float: left; width: 150px; height: 100px; text-align: center; border: 3px solid #ccc; position: relative}
+			.rwtm-images img {max-width: 150px; max-height: 100px}
+			.rwtm-images a {position: absolute; bottom: 0; right: 0; color: #fff; background: #000; font-weight: bold; padding: 5px}
+		';
 
-	/**
-	 * Enqueue scripts for upload
-	 *
-	 * @return void
-	 */
-	function enqueue_scritps_upload()
-	{
-		wp_enqueue_media();
-		wp_enqueue_script( 'underscore' );
-	}
-
-	// Add scripts for handling add/delete images
-	function add_script_upload() {
 		// Add enctype
 		$this->js .= '
 			$("#edittag").attr("enctype", "multipart/form-data");
 		';
 
-		// Add more file
+		// Delete file
 		$this->js .= '
-			$(".rw-add-file").click(function(){
-				var $first = $(this).parent().find(".file-input:first");
-				$first.clone().insertAfter($first).show();
+			$("body").on( "click", ".rwtm-delete-file", function(){
+				$(this).parent().remove();
 				return false;
 			});
 		';
 
-		// Delete file
-		$this->js .= '
-			$(".rw-delete-file").click(function(){
-				var $parent = $(this).parent(),
-					data = $(this).attr("rel");
-				$.post(ajaxurl, {action: \'rw_delete_file\', data: data}, function(response){
-					if (response == "0") {
-						alert("File has been successfully deleted.");
-						$parent.remove();
-					}
-					if (response == "1") {
-						alert("You don\'t have permission to delete this file.");
-					}
-				});
+		// File upload
+		foreach ( $this->_fields as $field ) {
+			if ( 'file' != $field['type'] )
+				continue;
+
+			$id = $field['id'];
+			$this->js .= "
+			$('#rwtm-file-upload-$id').click(function(){
+
+				var template = '<# _.each( attachments, function( attachment ) { #>';
+				template += '<li>';
+				template += '<a href=\"{{{ attachment.url }}}\">{{{ attachment.title }}}</a>';
+				template += ' (<a class=\"rwtm-delete-file\" href=\"#\">" . __( 'Delete', 'rwtm' ) . "</a>)';
+				template += '<input type=\"hidden\" name=\"{$id}[]\" value=\"{{{ attachment.id }}}\">';
+				template += '</li>';
+				template += '<# } ); #>';
+
+				var \$uploaded = \$( this ).siblings( '.rwtm-uploaded' );
+
+				var frame = wp.media( {
+					multiple : true,
+					title    : \"" . __( 'Select File', 'rwtm' ) . "\"
+				} );
+
+				frame.on( 'select', function()
+				{
+					var selection = frame.state().get( 'selection' ).toJSON();
+
+					\$uploaded.append( _.template( template, { attachments: selection }, {
+						evaluate:    /<#([\s\S]+?)#>/g,
+						interpolate: /\{\{\{([\s\S]+?)\}\}\}/g,
+						escape:      /\{\{([^\}]+?)\}\}(?!\})/g
+					} ) );
+				} );
+				frame.open();
+
 				return false;
 			});
-		';
+			";
+		}
 
 		if ( !$this->has_field( 'image' ) )
 			return;
 
-		$this->css .= '
-			.rwtm-images {overflow: hidden; margin-bottom: 10px}
-			.rwtm-images li {margin: 0 10px 10px 0; float: left; width: 150px; height: 100px; text-align: center; border: 3px solid #ccc; position: relative}
-			.rwtm-images img {max-width: 150px; max-height: 100px}
-			.rwtm-images a {position: absolute; bottom: 0; right: 0; color: #fff; background: #000; font-weight: bold; padding: 5px}
-		';
+		wp_enqueue_media();
 
 		// Image upload
 		foreach ( $this->_fields as $field ) {
@@ -167,22 +176,22 @@ class RW_Taxonomy_Meta {
 				continue;
 
 			$id = $field['id'];
-
 			$this->js .= "
 			$('#rwtm-image-upload-$id').click(function(){
 
 				var template = '<# _.each( attachments, function( attachment ) { #>';
 				template += '<li>';
 				template += '<img src=\"{{{ attachment.sizes.full.url }}}\">';
+				template += '<a class=\"rwtm-delete-file\" href=\"#\">" . __( 'Delete', 'rwtm' ) . "</a>';
 				template += '<input type=\"hidden\" name=\"{$id}[]\" value=\"{{{ attachment.id }}}\">';
 				template += '</li>';
 				template += '<# } ); #>';
 
-				var \$imageList = \$( this ).siblings( '.rwtm-images' );
+				var \$uploaded = \$( this ).siblings( '.rwtm-uploaded' );
 
 				var frame = wp.media( {
 					multiple : true,
-					title    : 'Select Image',
+					title    : \"" . __( 'Select Image', 'rwtm' ) . "\",
 					library  : {
 						type: 'image'
 					}
@@ -190,10 +199,9 @@ class RW_Taxonomy_Meta {
 
 				frame.on( 'select', function()
 				{
-					// Get selections
 					var selection = frame.state().get( 'selection' ).toJSON();
 
-					\$imageList.append( _.template( template, { attachments: selection }, {
+					\$uploaded.append( _.template( template, { attachments: selection }, {
 						evaluate:    /<#([\s\S]+?)#>/g,
 						interpolate: /\{\{\{([\s\S]+?)\}\}\}/g,
 						escape:      /\{\{([^\}]+?)\}\}(?!\})/g
@@ -207,34 +215,6 @@ class RW_Taxonomy_Meta {
 		}
 	}
 
-	// Ajax delete files callback
-	function delete_file() {
-		if ( !isset( $_POST['data'] ) ) return;
-
-		list( $meta_id, $term_id, $name, $att, $nonce ) = explode( '!', $_POST['data'] );
-
-		if ( !wp_verify_nonce( $nonce, 'rw_ajax_delete_file' ) ) die( '1' );
-
-		$metas = get_option( $meta_id );
-		if ( empty( $metas ) ) $metas = array();
-		if ( !is_array( $metas ) ) $metas = (array) $metas;
-
-		// work on current term only
-		if ( !isset( $metas[$term_id] ) || !isset( $metas[$term_id][$name] ) ) return;
-
-		$files = & $metas[$term_id][$name];
-		foreach ( $files as $k => $v ) {
-			if ( $v == $att ) unset( $files[$k] );
-		}
-
-		update_option( $meta_id, $metas );
-		die();
-	}
-
-	/******************** END UPLOAD **********************/
-
-	/******************** BEGIN COLOR PICKER **********************/
-
 	// Check field color
 	function check_field_color() {
 		if ( !$this->has_field( 'color' ) )
@@ -245,10 +225,6 @@ class RW_Taxonomy_Meta {
 		$this->js .= '$(".color").wpColorPicker();';
 	}
 
-	/******************** END COLOR PICKER **********************/
-
-	/******************** BEGIN DATE PICKER **********************/
-
 	// Check field date
 	function check_field_date() {
 		if ( !$this->has_field( 'date' ) )
@@ -256,18 +232,17 @@ class RW_Taxonomy_Meta {
 
 		wp_enqueue_style( 'jquery-ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/smoothness/jquery-ui.min.css' );
 		wp_enqueue_script( 'jquery-ui-datepicker' );
-		$this->add_script_date();
-	}
 
-	// Custom script for date picker
-	function add_script_date() {
+		// CSS
+		$this->css .= '#ui-datepicker-div {display: none}';
+
+		// JS
 		$dates = array();
 		foreach ( $this->_fields as $field ) {
 			if ( 'date' == $field['type'] ) {
 				$dates[$field['id']] = $field['format'];
 			}
 		}
-
 		foreach ( $dates as $id => $format ) {
 			$this->js .= "$('#$id').datepicker({
 				dateFormat: '$format',
@@ -276,25 +251,19 @@ class RW_Taxonomy_Meta {
 		}
 	}
 
-	/******************** END DATE PICKER **********************/
-
-	/******************** BEGIN TIME PICKER **********************/
-
 	// Check field time
 	function check_field_time() {
 		if ( !$this->has_field( 'time' ) )
 			return;
-		// add style and script, use proper jQuery UI version
+
 		wp_enqueue_style( 'jquery-ui', 'http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/smoothness/jquery-ui.min.css' );
 		wp_enqueue_style( 'jquery-ui-timepicker', 'http://cdn.jsdelivr.net/jquery.ui.timepicker.addon/1.3/jquery-ui-timepicker-addon.css' );
 		wp_enqueue_script( 'jquery-ui-timepicker', 'http://cdn.jsdelivr.net/jquery.ui.timepicker.addon/1.3/jquery-ui-timepicker-addon.min.js', array( 'jquery-ui-datepicker', 'jquery-ui-slider' ) );
 
-		$this->add_script_time();
-	}
+		// CSS
+		$this->css .= '#ui-datepicker-div {display: none}';
 
-	// Custom script and style for time picker
-	function add_script_time() {
-		// script
+		// JS
 		$times = array();
 		foreach ( $this->_fields as $field ) {
 			if ( 'time' == $field['type'] ) {
@@ -305,8 +274,6 @@ class RW_Taxonomy_Meta {
 			$this->js .= "$('#$id').timepicker({showSecond: true, timeFormat: '$format'})";
 		}
 	}
-
-	/******************** END TIME PICKER **********************/
 
 	/******************** BEGIN META BOX PAGE **********************/
 
@@ -349,8 +316,6 @@ class RW_Taxonomy_Meta {
 		echo '</table>';
 	}
 
-	/******************** END META BOX PAGE **********************/
-
 	/******************** BEGIN META BOX FIELDS **********************/
 
 	function show_field_begin( $field, $meta ) {
@@ -363,7 +328,7 @@ class RW_Taxonomy_Meta {
 
 	function show_field_text( $field, $meta ) {
 		$this->show_field_begin( $field, $meta );
-		echo "<input type='text' name='{$field['id']}' id='{$field['id']}' value='$meta' size='40'  style='{$field['style']}'>";
+		echo "<input type='text' name='{$field['id']}' id='{$field['id']}' value='$meta' style='{$field['style']}'>";
 		$this->show_field_end( $field, $meta );
 	}
 
@@ -418,31 +383,32 @@ class RW_Taxonomy_Meta {
 	}
 
 	function show_field_file( $field, $meta ) {
-		if ( !is_array( $meta ) ) $meta = (array) $meta;
+		if ( !is_array( $meta ) )
+			$meta = (array) $meta;
 
 		$this->show_field_begin( $field, $meta );
-		echo "{$field['desc']}<br>";
+		if ( $field['desc'] )
+			echo "{$field['desc']}<br>";
 
 		if ( !empty( $meta ) ) {
-			$nonce = wp_create_nonce( 'rw_ajax_delete_file' );
-			$rel = "{$this->_meta['id']}!{$_GET['tag_ID']}!{$field['id']}";
-
-			echo '<div style="margin-bottom: 10px"><strong>' . esc_html__( 'Uploaded files', 'meta_box' ) . '</strong></div>';
-			echo '<ol>';
+			echo '<ol class="rwtm-files rwtm-uploaded">';
 			foreach ( $meta as $att ) {
-				if ( wp_attachment_is_image( $att ) ) continue; // what's image uploader for?
-				echo "<li>" . wp_get_attachment_link( $att ) . " (<a class='rw-delete-file' href='#' rel='$rel!$att!$nonce'>" . __( 'Delete' ) . "</a>)</li>";
+				printf( '
+					<li>
+						%s (<a class="rwtm-delete-file" href="#">%s</a>)
+						<input type="hidden" name="%s[]" value="%s">
+					</li>',
+					wp_get_attachment_link( $att ),
+					__( 'Delete', 'rwtm' ),
+					$field['id'],
+					$att
+				);
 			}
 			echo '</ol>';
 		}
 
-		// show form upload
-		echo "<div style='clear: both'><strong>" . __( 'Upload new files' ) . "</strong></div>
-			<div class='new-files'>
-				<div class='file-input'><input type='file' name='{$field['id']}[]'></div>
-				<a class='rw-add-file' href='javascript:void(0)'>" . __( 'Add more file' ) . "</a>
-			</div>
-		</td>";
+		echo "<a href='#' id='rwtm-file-upload-{$field['id']}' class='button'>" . __( 'Select File', 'rwtm' ) . "</a>";
+		echo '</td>';
 	}
 
 	function show_field_image( $field, $meta ) {
@@ -453,22 +419,25 @@ class RW_Taxonomy_Meta {
 		if ( $field['desc'] )
 			echo "{$field['desc']}<br>";
 
-		$nonce_delete = wp_create_nonce( 'rw_ajax_delete_file' );
-		$rel = "{$this->_meta['id']}!{$_GET['tag_ID']}!{$field['id']}";
-
-		echo "<ul class='rwtm-images'>";
-		foreach ( $meta as $att ) {
-			$img = wp_get_attachment_image( $att );
-
-			echo "<li>
-					{$img}
-					<a title='" . __( 'Delete this image' ) . "' class='rw-delete-file' href='#' rel='$rel!$att!$nonce_delete'>" . __( 'Delete' ) . "</a>
-					<input type='hidden' name='{$field['id']}[]' value='$att'>
-				</li>";
+		if ( !empty( $meta ) ) {
+			echo "<ul class='rwtm-uploaded rwtm-images'>";
+			foreach ( $meta as $att ) {
+				printf( '
+					<li>
+						%s <a class="rwtm-delete-file" href="#">%s</a>
+						<input type="hidden" name="%s[]" value="%s">
+					</li>',
+					wp_get_attachment_image( $att ),
+					__( 'Delete', 'rwtm' ),
+					$field['id'],
+					$att
+				);
+			}
+			echo '</ul>';
 		}
-		echo '</ul>';
 
-		echo "<a href='#' id='rwtm-image-upload-{$field['id']}' class='rwtm-image-upload button'>" . __( 'Select Image' ) . "</a>";
+		echo "<a href='#' id='rwtm-image-upload-{$field['id']}' class='button'>" . __( 'Select Image', 'rwtm' ) . "</a>";
+		echo '</td>';
 	}
 
 	function show_field_color( $field, $meta ) {
@@ -497,18 +466,10 @@ class RW_Taxonomy_Meta {
 		$this->show_field_text( $field, $meta );
 	}
 
-	/******************** END META BOX FIELDS **********************/
-
 	/******************** BEGIN META BOX SAVE **********************/
 
 	// Save meta fields
 	function save( $term_id, $tt_id ) {
-		/*
-		if (!check_admin_referer(basename(__FILE__), 'rw_taxonomy_meta_nonce')) {	// check nonce
-			return;
-		}
-		*/
-
 		$metas = get_option( $this->_meta['id'] );
 		if ( !is_array( $metas ) )
 			$metas = (array) $metas;
@@ -517,17 +478,13 @@ class RW_Taxonomy_Meta {
 
 		foreach ( $this->_fields as $field ) {
 			$name = $field['id'];
-			$type = $field['type'];
 
-			$old = isset( $meta[$name] ) ? $meta[$name] : ( $field['multiple'] ? array() : '' );
 			$new = isset( $_POST[$name] ) ? $_POST[$name] : ( $field['multiple'] ? array() : '' );
-
-			// Call defined method to save meta value, if there's no methods, call common one
-			$save_func = 'save_field_' . $type;
-			if ( method_exists( $this, $save_func ) ) {
-				$meta = call_user_func( array( $this, $save_func ), $meta, $field, $old, $new );
+			$new = is_array( $new ) ? array_map( 'stripslashes', $new ) : stripslashes( $new );
+			if ( empty( $new ) ) {
+				unset( $meta[$name] );
 			} else {
-				$this->save_field( $meta, $field, $old, $new );
+				$meta[$name] = $new;
 			}
 		}
 
@@ -535,47 +492,7 @@ class RW_Taxonomy_Meta {
 		update_option( $this->_meta['id'], $metas );
 	}
 
-	// Common functions for saving field
-	function save_field( &$meta, $field, $old, $new ) {
-		$name = $field['id'];
-
-		$new = is_array( $new ) ? array_map( 'stripslashes', $new ) : stripslashes( $new );
-		if ( empty( $new ) ) {
-			unset( $meta[$name] );
-		} else {
-			$meta[$name] = $new;
-		}
-	}
-
-	function save_field_file( $meta, $field, $old, $new ) {
-		$name = $field['id'];
-		if ( empty( $_FILES[$name] ) ) return;
-
-		$this->fix_file_array( $_FILES[$name] );
-
-		foreach ( $_FILES[$name] as $position => $fileitem ) {
-			$file = wp_handle_upload( $fileitem, array( 'test_form' => false ) );
-
-			if ( empty( $file['file'] ) ) continue;
-			$filename = $file['file'];
-
-			$attachment = array(
-				'post_mime_type' => $file['type'],
-				'guid'           => $file['url'],
-				'post_title'     => preg_replace( '/\.[^.]+$/', '', basename( $filename ) ),
-				'post_content'   => '',
-			);
-			$id = wp_insert_attachment( $attachment, $filename );
-			if ( !is_wp_error( $id ) ) {
-				wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $filename ) );
-				$meta[$name][] = $id;
-			}
-		}
-
-		return $meta;
-	}
-
-	/******************** END META BOX SAVE **********************/
+	/******************** BEGIN META BOX DELETE **********************/
 
 	function delete( $term_id, $tt_id ) {
 		$metas = get_option( $this->_meta['id'] );
@@ -603,7 +520,7 @@ class RW_Taxonomy_Meta {
 			$multiple = in_array( $field['type'], array( 'checkbox_list', 'file', 'image' ) ) ? true : false;
 			$std = $multiple ? array() : '';
 			$format = 'date' == $field['type'] ? 'yy-mm-dd' : ( 'time' == $field['type'] ? 'hh:mm' : '' );
-			$style = 'width: 97%';
+			$style = in_array( $field['type'], array( 'text', 'textarea' ) ) ? 'width: 95%' : '';
 			$optgroups = false;
 			if ( 'select' == $field['type'] )
 				$style = 'height: auto';
@@ -633,7 +550,7 @@ class RW_Taxonomy_Meta {
 	 * To the more standard and appropriate:
 	 *  $_FILES['field']['index']['key']
 	 */
-	function fix_file_array( &$files ) {
+	function fix_file_array( $files ) {
 		$output = array();
 		foreach ( $files as $key => $list ) {
 			foreach ( $list as $index => $value ) {
@@ -641,6 +558,7 @@ class RW_Taxonomy_Meta {
 			}
 		}
 		$files = $output;
+		return $output;
 	}
 
 	/******************** END HELPER FUNCTIONS **********************/
