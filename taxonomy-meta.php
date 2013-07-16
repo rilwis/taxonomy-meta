@@ -104,7 +104,7 @@ class RW_Taxonomy_Meta {
 			return;
 
 		$this->css .= '
-			.rwtm-uploaded { overflow: hidden; margin: 0 0 10px}
+			.rwtm-uploaded {overflow: hidden; margin: 0 0 10px}
 			.rwtm-files {padding-left: 20px}
 			.rwtm-images li {margin: 0 10px 10px 0; float: left; width: 150px; height: 100px; text-align: center; border: 3px solid #ccc; position: relative}
 			.rwtm-images img {max-width: 150px; max-height: 100px}
@@ -118,46 +118,42 @@ class RW_Taxonomy_Meta {
 
 		// Delete file
 		$this->js .= '
-			$("body").on( "click", ".rwtm-delete-file", function(){
+			$("body").on("click", ".rwtm-delete-file", function(){
 				$(this).parent().remove();
 				return false;
 			});
 		';
 
 		// File upload
-		foreach ( $this->_fields as $field ) {
-			if ( 'file' != $field['type'] )
-				continue;
-
-			$id = $field['id'];
+		if ( $this->has_field( 'file' ) ) {
 			$this->js .= "
-			$('#rwtm-file-upload-$id').click(function(){
+			\$('body').on('click', '.rwtm-file-upload', function(){
+				var id = \$(this).data('field');
 
-				var template = '<# _.each( attachments, function( attachment ) { #>';
+				var template = '<# _.each(attachments, function(attachment) { #>';
 				template += '<li>';
-				template += '<a href=\"{{{ attachment.url }}}\">{{{ attachment.title }}}</a>';
+				template += '<a href=\"{{{ attachment.url }}}\">{{{ attachment.filename }}}</a>';
 				template += ' (<a class=\"rwtm-delete-file\" href=\"#\">" . __( 'Delete', 'rwtm' ) . "</a>)';
-				template += '<input type=\"hidden\" name=\"{$id}[]\" value=\"{{{ attachment.id }}}\">';
+				template += '<input type=\"hidden\" name=\"' + id + '[]\" value=\"{{{ attachment.id }}}\">';
 				template += '</li>';
-				template += '<# } ); #>';
+				template += '<# }); #>';
 
-				var \$uploaded = \$( this ).siblings( '.rwtm-uploaded' );
+				var \$uploaded = \$(this).siblings('.rwtm-uploaded');
 
-				var frame = wp.media( {
+				var frame = wp.media({
 					multiple : true,
 					title    : \"" . __( 'Select File', 'rwtm' ) . "\"
-				} );
-
-				frame.on( 'select', function()
+				});
+				frame.on('select', function()
 				{
-					var selection = frame.state().get( 'selection' ).toJSON();
+					var selection = frame.state().get('selection').toJSON();
 
-					\$uploaded.append( _.template( template, { attachments: selection }, {
+					\$uploaded.append(_.template(template, { attachments: selection }, {
 						evaluate:    /<#([\s\S]+?)#>/g,
 						interpolate: /\{\{\{([\s\S]+?)\}\}\}/g,
 						escape:      /\{\{([^\}]+?)\}\}(?!\})/g
-					} ) );
-				} );
+					}));
+				});
 				frame.open();
 
 				return false;
@@ -171,48 +167,42 @@ class RW_Taxonomy_Meta {
 		wp_enqueue_media();
 
 		// Image upload
-		foreach ( $this->_fields as $field ) {
-			if ( 'image' != $field['type'] )
-				continue;
+		$this->js .= "
+		\$('body').on('click', '.rwtm-image-upload', function(){
+			var id = \$(this).data('field');
 
-			$id = $field['id'];
-			$this->js .= "
-			$('#rwtm-image-upload-$id').click(function(){
+			var template = '<# _.each(attachments, function(attachment) { #>';
+			template += '<li>';
+			template += '<img src=\"{{{ attachment.sizes.full.url }}}\">';
+			template += '<a class=\"rwtm-delete-file\" href=\"#\">" . __( 'Delete', 'rwtm' ) . "</a>';
+			template += '<input type=\"hidden\" name=\"' + id + '[]\" value=\"{{{ attachment.id }}}\">';
+			template += '</li>';
+			template += '<# }); #>';
 
-				var template = '<# _.each( attachments, function( attachment ) { #>';
-				template += '<li>';
-				template += '<img src=\"{{{ attachment.sizes.full.url }}}\">';
-				template += '<a class=\"rwtm-delete-file\" href=\"#\">" . __( 'Delete', 'rwtm' ) . "</a>';
-				template += '<input type=\"hidden\" name=\"{$id}[]\" value=\"{{{ attachment.id }}}\">';
-				template += '</li>';
-				template += '<# } ); #>';
+			var \$uploaded = \$(this).siblings('.rwtm-uploaded');
 
-				var \$uploaded = \$( this ).siblings( '.rwtm-uploaded' );
-
-				var frame = wp.media( {
-					multiple : true,
-					title    : \"" . __( 'Select Image', 'rwtm' ) . "\",
-					library  : {
-						type: 'image'
-					}
-				} );
-
-				frame.on( 'select', function()
-				{
-					var selection = frame.state().get( 'selection' ).toJSON();
-
-					\$uploaded.append( _.template( template, { attachments: selection }, {
-						evaluate:    /<#([\s\S]+?)#>/g,
-						interpolate: /\{\{\{([\s\S]+?)\}\}\}/g,
-						escape:      /\{\{([^\}]+?)\}\}(?!\})/g
-					} ) );
-				} );
-				frame.open();
-
-				return false;
+			var frame = wp.media({
+				multiple : true,
+				title    : \"" . __( 'Select Image', 'rwtm' ) . "\",
+				library  : {
+					type: 'image'
+				}
 			});
-			";
-		}
+			frame.on('select', function()
+			{
+				var selection = frame.state().get('selection').toJSON();
+
+				\$uploaded.append(_.template(template, { attachments: selection }, {
+					evaluate:    /<#([\s\S]+?)#>/g,
+					interpolate: /\{\{\{([\s\S]+?)\}\}\}/g,
+					escape:      /\{\{([^\}]+?)\}\}(?!\})/g
+				}));
+			});
+			frame.open();
+
+			return false;
+		});
+		";
 	}
 
 	// Check field color
@@ -390,24 +380,22 @@ class RW_Taxonomy_Meta {
 		if ( $field['desc'] )
 			echo "{$field['desc']}<br>";
 
-		if ( !empty( $meta ) ) {
-			echo '<ol class="rwtm-files rwtm-uploaded">';
-			foreach ( $meta as $att ) {
-				printf( '
-					<li>
-						%s (<a class="rwtm-delete-file" href="#">%s</a>)
-						<input type="hidden" name="%s[]" value="%s">
-					</li>',
-					wp_get_attachment_link( $att ),
-					__( 'Delete', 'rwtm' ),
-					$field['id'],
-					$att
-				);
-			}
-			echo '</ol>';
+		echo '<ol class="rwtm-files rwtm-uploaded">';
+		foreach ( $meta as $att ) {
+			printf( '
+				<li>
+					%s (<a class="rwtm-delete-file" href="#">%s</a>)
+					<input type="hidden" name="%s[]" value="%s">
+				</li>',
+				wp_get_attachment_link( $att ),
+				__( 'Delete', 'rwtm' ),
+				$field['id'],
+				$att
+			);
 		}
+		echo '</ol>';
 
-		echo "<a href='#' id='rwtm-file-upload-{$field['id']}' class='button'>" . __( 'Select File', 'rwtm' ) . "</a>";
+		echo "<a href='#' class='rwtm-file-upload button' data-field='{$field['id']}'>" . __( 'Select File', 'rwtm' ) . "</a>";
 		echo '</td>';
 	}
 
@@ -419,24 +407,22 @@ class RW_Taxonomy_Meta {
 		if ( $field['desc'] )
 			echo "{$field['desc']}<br>";
 
-		if ( !empty( $meta ) ) {
-			echo "<ul class='rwtm-uploaded rwtm-images'>";
-			foreach ( $meta as $att ) {
-				printf( '
-					<li>
-						%s <a class="rwtm-delete-file" href="#">%s</a>
-						<input type="hidden" name="%s[]" value="%s">
-					</li>',
-					wp_get_attachment_image( $att ),
-					__( 'Delete', 'rwtm' ),
-					$field['id'],
-					$att
-				);
-			}
-			echo '</ul>';
+		echo '<ul class="rwtm-uploaded rwtm-images">';
+		foreach ( $meta as $att ) {
+			printf( '
+				<li>
+					%s <a class="rwtm-delete-file" href="#">%s</a>
+					<input type="hidden" name="%s[]" value="%s">
+				</li>',
+				wp_get_attachment_image( $att ),
+				__( 'Delete', 'rwtm' ),
+				$field['id'],
+				$att
+			);
 		}
+		echo '</ul>';
 
-		echo "<a href='#' id='rwtm-image-upload-{$field['id']}' class='button'>" . __( 'Select Image', 'rwtm' ) . "</a>";
+		echo "<a href='#' class='rwtm-image-upload button' data-field='{$field['id']}'>" . __( 'Select Image', 'rwtm' ) . "</a>";
 		echo '</td>';
 	}
 
