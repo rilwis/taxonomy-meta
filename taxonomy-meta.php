@@ -313,7 +313,7 @@ class RW_Taxonomy_Meta {
 	}
 
 	function show_field_end( $field, $meta ) {
-		echo $field['desc'] ? "<br>{$field['desc']}</td>" : '</td>';
+		echo $field['desc'] ? "<br><span class='description'>{$field['desc']}</span></td>" : '</td>';
 	}
 
 	function show_field_text( $field, $meta ) {
