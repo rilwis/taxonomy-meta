@@ -79,6 +79,7 @@ function YOUR_PREFIX_register_taxonomy_meta_boxes()
 	// Second meta section
 	$meta_sections[] = array(
 		'title' => 'Advanced Fields',
+		'taxonomies' => array('category', 'post_tag'), // list of taxonomies. Default is array('category', 'post_tag'). Optional
 		'id'    => 'option_name',
 
 		'fields' => array(
