@@ -124,10 +124,6 @@ class RW_Taxonomy_Meta {
 				var uploadbtn = parentul.next("a.button");
 				var filecount = parentul.find("li").length;
 				
-				console.log(limit);
-				console.log(uploadbtn);
-				console.log(filecount);
-				
 				if(filecount <= limit) uploadbtn.show();
 				
 				$(this).parent().remove();				
