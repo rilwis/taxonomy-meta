@@ -3,7 +3,7 @@
 Plugin Name: Taxonomy Meta
 Plugin URI: http://www.deluxeblogtips.com/taxonomy-meta-script-for-wordpress
 Description: Add meta values to terms, mimic custom post fields
-Version: 1.2
+Version: 1.2.1
 Author: Rilwis
 Author URI: http://www.deluxeblogtips.com
 License: GPL2+
@@ -106,8 +106,8 @@ class RW_Taxonomy_Meta {
 		$this->css .= '
 			.rwtm-uploaded {overflow: hidden; margin: 0 0 10px}
 			.rwtm-files {padding-left: 20px}
-			.rwtm-images li {margin: 0 10px 10px 0; float: left; width: 150px; height: 100px; text-align: center; border: 3px solid #ccc; position: relative}
-			.rwtm-images img {max-width: 150px; max-height: 100px}
+			.rwtm-images li {margin: 0 10px 10px 0; float: left; width: 100px; height: 100px; text-align: center; border: 3px solid #ccc; position: relative}
+			.rwtm-images img {max-width: 100px; max-height: 100px; width: auto; height: auto;}
 			.rwtm-images a {position: absolute; bottom: 0; right: 0; color: #fff; background: #000; font-weight: bold; padding: 5px}
 		';
 
@@ -118,8 +118,20 @@ class RW_Taxonomy_Meta {
 
 		// Delete file
 		$this->js .= '
-			$("body").on("click", ".rwtm-delete-file", function(){
-				$(this).parent().remove();
+			$("body").on("click", ".rwtm-delete-file", function(){				
+				var parentul = $(this).closest("ul");
+				var limit = parentul.data("limit");
+				var uploadbtn = parentul.next("a.button");
+				var filecount = parentul.find("li").length;
+				
+				console.log(limit);
+				console.log(uploadbtn);
+				console.log(filecount);
+				
+				if(filecount <= limit) uploadbtn.show();
+				
+				$(this).parent().remove();				
+				
 				return false;
 			});
 		';
@@ -170,6 +182,7 @@ class RW_Taxonomy_Meta {
 		$this->js .= "
 		\$('body').on('click', '.rwtm-image-upload', function(){
 			var id = \$(this).data('field');
+			var uploadbtn = \$(this);
 
 			var template = '<# _.each(attachments, function(attachment) { #>';
 			template += '<li>';
@@ -197,6 +210,11 @@ class RW_Taxonomy_Meta {
 					interpolate: /\{\{\{([\s\S]+?)\}\}\}/g,
 					escape:      /\{\{([^\}]+?)\}\}(?!\})/g
 				}));
+				
+				var limit = \$uploaded.data('limit');
+				var uploadedcount = \$uploaded.find('li').length;
+				
+				if(uploadedcount == limit) uploadbtn.hide();
 			});
 			frame.open();
 
@@ -406,23 +424,34 @@ class RW_Taxonomy_Meta {
 		$this->show_field_begin( $field, $meta );
 		if ( $field['desc'] )
 			echo "{$field['desc']}<br>";
+		
+		$limit = (isset($field['limit']) && $field['limit'] != "") ? $field['limit'] : 9999;
 
-		echo '<ul class="rwtm-uploaded rwtm-images">';
-		foreach ( $meta as $att ) {
-			printf( '
-				<li>
-					%s <a class="rwtm-delete-file" href="#">%s</a>
-					<input type="hidden" name="%s[]" value="%s">
-				</li>',
-				wp_get_attachment_image( $att ),
-				__( 'Delete', 'rwtm' ),
-				$field['id'],
-				$att
-			);
+		echo '<ul class="rwtm-uploaded rwtm-images" data-limit="'.$limit.'">';
+		$i = 0;
+		
+		if(!empty($meta))
+		{
+			foreach ( $meta as $att ) {
+				printf( '
+					<li>
+						%s <a class="rwtm-delete-file" href="#">%s</a>
+						<input type="hidden" name="%s[]" value="%s">
+					</li>',
+					wp_get_attachment_image( $att ),
+					__( 'Delete', 'rwtm' ),
+					$field['id'],
+					$att
+				);
+				
+				$i++; if($i == $limit) break;
+			}
 		}
 		echo '</ul>';
+		
+		$hidebtn = ($i == $limit) ? 'style="display:none"' : "" ;
 
-		echo "<a href='#' class='rwtm-image-upload button' data-field='{$field['id']}'>" . __( 'Select Image', 'rwtm' ) . "</a>";
+		echo "<a href='#' class='rwtm-image-upload button' data-field='{$field['id']}' {$hidebtn}>" . __( 'Select Image', 'rwtm' ) . "</a>";
 		echo '</td>';
 	}
 
