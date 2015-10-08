@@ -171,9 +171,16 @@ class RW_Taxonomy_Meta {
 		\$('body').on('click', '.rwtm-image-upload', function(){
 			var id = \$(this).data('field');
 
-			var template = '<# _.each(attachments, function(attachment) { #>';
+			var template = '<# _.each(attachments, function(attachment) { ';
+			// SVGs don't have a sizes property
+			template +=' if (attachment.sizes) {';
+			template +='  var imageUrl = attachment.sizes.full.url;';
+			template +=' } else {';
+			template +='  var imageUrl = attachment.url;';
+			template +=' }';
+			template +=' #>';
 			template += '<li>';
-			template += '<img src=\"{{{ attachment.sizes.full.url }}}\">';
+			template += '<img src=\"{{{ imageUrl }}}\">';
 			template += '<a class=\"rwtm-delete-file\" href=\"#\">" . __( 'Delete', 'rwtm' ) . "</a>';
 			template += '<input type=\"hidden\" name=\"' + id + '[]\" value=\"{{{ attachment.id }}}\">';
 			template += '</li>';
@@ -408,13 +415,20 @@ class RW_Taxonomy_Meta {
 			echo "{$field['desc']}<br>";
 
 		echo '<ul class="rwtm-uploaded rwtm-images">';
+
 		foreach ( $meta as $att ) {
+			$image = wp_get_attachment_image_src( $att, array( 150, 150 ) );
+
+			if ( $image === false ) {
+				continue;
+			}
+
 			printf( '
 				<li>
-					%s <a class="rwtm-delete-file" href="#">%s</a>
+					<img src="%s" width="150" height="150"> <a class="rwtm-delete-file" href="#">%s</a>
 					<input type="hidden" name="%s[]" value="%s">
 				</li>',
-				wp_get_attachment_image( $att ),
+				$image[0],
 				__( 'Delete', 'rwtm' ),
 				$field['id'],
 				$att
