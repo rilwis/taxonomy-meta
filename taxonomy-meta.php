@@ -47,9 +47,10 @@ class RW_Taxonomy_Meta {
 	function load_edit_page()
 	{
 		$screen = get_current_screen();
+		// Starting with WP 4.5, $screen->base returns 'term' instead of 'edit-tags' when editing a term
+		// Also it no longer sets the 'action' querystring var
 		if (
-			'edit-tags' != $screen->base
-			|| empty( $_GET['action'] ) || 'edit' != $_GET['action']
+			!('term' === $screen->base || ('edit-tags' === $screen->base && !empty( $_GET['action'] ) && 'edit' === $_GET['action']))
 			|| !in_array( $screen->taxonomy, $this->_taxonomies )
 		)
 		{
@@ -93,7 +94,7 @@ class RW_Taxonomy_Meta {
 	 */
 	function output_js()
 	{
-		echo $this->js ? '<script>jQuery(function($){' . $this->js . '});</script>' : '';
+		echo $this->js ? '<script>jQuery(function($){ var pre180Underscore = window._ && parseFloat(window._.VERSION) <= 1.7; ' . $this->js . '});</script>' : '';
 	}
 
 	/******************** BEGIN FIELDS **********************/
@@ -147,12 +148,19 @@ class RW_Taxonomy_Meta {
 				frame.on('select', function()
 				{
 					var selection = frame.state().get('selection').toJSON();
-
-					\$uploaded.append(_.template(template, { attachments: selection }, {
+					var data      = { attachments: selection };
+					var settings  = {
 						evaluate:    /<#([\s\S]+?)#>/g,
 						interpolate: /\{\{\{([\s\S]+?)\}\}\}/g,
 						escape:      /\{\{([^\}]+?)\}\}(?!\})/g
-					}));
+					};
+
+					// Underscore 1.8.0 made a breaking change to the function signature of template()
+					if (pre180Underscore) {
+						\$uploaded.append(_.template(template, data, settings));
+					} else {
+						\$uploaded.append(_.template(template, settings)(data));
+					}
 				});
 				frame.open();
 
@@ -198,12 +206,19 @@ class RW_Taxonomy_Meta {
 			frame.on('select', function()
 			{
 				var selection = frame.state().get('selection').toJSON();
-
-				\$uploaded.append(_.template(template, { attachments: selection }, {
+				var data      = { attachments: selection };
+				var settings  = {
 					evaluate:    /<#([\s\S]+?)#>/g,
 					interpolate: /\{\{\{([\s\S]+?)\}\}\}/g,
 					escape:      /\{\{([^\}]+?)\}\}(?!\})/g
-				}));
+				};
+
+				// Underscore 1.8.0 made a breaking change to the function signature of template()
+				if (pre180Underscore) {
+					\$uploaded.append(_.template(template, data, settings));
+				} else {
+					\$uploaded.append(_.template(template, settings)(data));
+				}
 			});
 			frame.open();
 
