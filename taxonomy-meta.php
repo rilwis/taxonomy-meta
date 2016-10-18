@@ -36,7 +36,7 @@ class RW_Taxonomy_Meta {
 		add_action( 'admin_init', array( $this, 'add' ), 100 );
 		add_action( 'edit_term', array( $this, 'save' ), 10, 2 );
 		add_action( 'delete_term', array( $this, 'delete' ), 10, 2 );
-		add_action( 'load-edit-tags.php', array( $this, 'load_edit_page' ) );
+		add_action( 'load-term.php', array( $this, 'load_edit_page' ) );
 	}
 
 	/**
