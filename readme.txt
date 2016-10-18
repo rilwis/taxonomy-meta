@@ -3,7 +3,7 @@ Contributors: rilwis
 Donate link: http://www.deluxeblogtips.com/donate
 Tags: custom-fields, custom-field, meta, taxonomy, term
 Requires at least: 3.3
-Tested up to: 3.5.2
+Tested up to: 4.6.1
 Stable tag: 1.2
 
 Taxonomy Meta plugin helps you easily add meta values to terms, mimic custom post fields
